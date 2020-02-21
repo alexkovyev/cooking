@@ -58,7 +58,7 @@ class BaseOrder(object):
 
 class BaseDish(object):
     """Этот класс представляет собой шаблон блюда в заказе."""
-    DISH_STATUSES = ["received", "cooking", "ready"]
+    DISH_STATUSES = ["received", "cooking", "ready", "delivered", "failed_to_cook"]
 
     def __init__(self):
         # есть ли в БД у блюда какой то номер, присвоенный ранее. Как хранится информация о заказе в БД
@@ -70,6 +70,16 @@ class BaseDish(object):
         self.additive: object
 
         self.status: str
+        self.pickup_point_unit: int
+
+        # тут собираются в каком то виде все чейны, каждый элемент списка атомарен
+        self.chain: []
+
+
+class BaseDough(object):
+    """Этот класс описывает """
+    pass
+
 
 
 class TodaysOrders(object):
