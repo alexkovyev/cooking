@@ -71,10 +71,11 @@ class BaseDish(object):
 
         self.status: str
         self.oven_unit: object
+        self.time_starting_baking: datetime
         self.pickup_point_unit: int
 
         # тут собираются в каком то виде все чейны, каждый элемент списка атомарен
-        self.chain: []
+        self.chain = []
 
     def oven_reserve_for_dish(self):
         """Это группа функций назначает печь для каждого блюда. ДОПИСАТЬ:
@@ -85,16 +86,24 @@ class BaseDish(object):
         pass
 
 
-class BaseDough(object):
-    """Этот класс содержит информацию о тесте, которое используется в заказанном блюде"""
+class BasePizzaPart(object):
+    """Базовый класс компонента пиццы"""
 
     def __init__(self):
-        self.id = int
         self.refid = int
         self.halfstuff_cell_id = int
         self.chain = ["структура данных для чейна пока не определена"]
-        self.base_time: datetime
+        # нужно ли это время? где используем
+        self.cooking_duration: datetime
 
+    def upload_dough_info(self):
+        """Эта функция делает select из БД. Таблица Dough, загружает:
+         - чейн для теста
+         - данные о времени (если они в отдельной таблице)
+         - данные о том, какой п-ф нужен
+         Коннект в отдельной фнукции
+         """
+        # database_connect()
         pass
 
     def checking_available(self):
@@ -102,20 +111,29 @@ class BaseDough(object):
         резерв)"""
         pass
 
-    def upload_dough_info(self):
-        """Эта функция делает select из БД. Таблица Dough, загружает:
-         - чейн для теста
-         - данные о времени (если они в отдельной таблице)
-         - данные о том, какой п\ф нужен
-         Коннект в отдельной фнукции
-         """
-        # database_connect()
+    def halfstuff_cell_evaluation(self):
+        """Эта группа фнукций определеяет и назначает ячейку пф. Возможно перенести в mixin"""
         pass
 
-    def halfstuff_cell_evaluation(self):
-        """Эта группа фнукций определеяет и назначает ячейку п\ф. Возможно перенести в mixin"""
+    def chain_update(self):
+        """Эта функция обновляет чейн этапа с учетом назнаенного полуфабриката"""
         pass
-    
+
+
+class BaseDough(BasePizzaPart):
+    """Этот класс содержит информацию о тесте, которое используется в заказанном блюде"""
+    pass
+
+
+class BaseFilling(BasePizzaPart):
+    """Этот класс содержит информацию о начинке. НУЖНЫ ответы о начинке БД"""
+    pass
+
+
+class BaseSauce(BasePizzaPart):
+    """Этот класс содержит инфорамцию об используемом соусе"""
+    pass
+
 
 class TodaysOrders(object):
     """Этот класс содержит информацию о том, какие блюда готовятся в текущий момент. После обработки заказа,
