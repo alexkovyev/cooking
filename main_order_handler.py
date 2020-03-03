@@ -62,6 +62,7 @@ class BaseDish(object):
 
     def __init__(self):
         # есть ли в БД у блюда какой то номер, присвоенный ранее. Как хранится информация о заказе в БД
+        # нужен ли Id блюда?
         self.id = int
 
         self.dough: object
@@ -112,7 +113,7 @@ class BasePizzaPart(object):
         pass
 
     def halfstuff_cell_evaluation(self):
-        """Эта группа фнукций определеяет и назначает ячейку пф. Возможно перенести в mixin"""
+        """Эта группа фнукций определеяет и назначает ячейку пф."""
         pass
 
     def chain_update(self):
@@ -122,16 +123,29 @@ class BasePizzaPart(object):
 
 class BaseDough(BasePizzaPart):
     """Этот класс содержит информацию о тесте, которое используется в заказанном блюде"""
+
+    def __init__(self):
+        super().__init__()
     pass
 
 
 class BaseFilling(BasePizzaPart):
     """Этот класс содержит информацию о начинке. НУЖНЫ ответы о начинке БД"""
-    pass
+
+    def __init__(self):
+        super().__init__()
+        self.halfstuff_cell_id = []
+
+    def halfstuff_cell_evaluation(self):
+        """Отдельная группа функций по назначению пф, так как он не один, а несколько """
+        pass
 
 
 class BaseSauce(BasePizzaPart):
     """Этот класс содержит инфорамцию об используемом соусе"""
+
+    def __init__(self):
+        super().__init__()
     pass
 
 
@@ -140,7 +154,7 @@ class TodaysOrders(object):
     заказ удаляется из self.current_orders_proceed"""
 
     def __init__(self):
-        self.current_orders_proceed = {{}}
+        self.current_orders_proceed = {"refid": "object_order"}
         pass
 
     def checking_order_for_double(self):
@@ -148,8 +162,23 @@ class TodaysOrders(object):
         :return bool"""
         pass
 
+    def qr_validation(self):
+        """Этот метод валидирует qr-code """
+        pass
+
 
 class TodaysDishes(object):
     """Этот класс содержит информацию о том, какие блюда готовятся в текущий момент. После обработки заказа он
     удаляется"""
+
+    def __init__(self):
+        self.current_dishes_proceed = {{}}
     pass
+
+
+class CurrentSituation(object):
+    """Этот класс содержит информацию о том, что сейчас происходит в киоске"""
+
+    def __init__(self):
+
+        pass
