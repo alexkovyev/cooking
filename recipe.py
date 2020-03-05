@@ -16,7 +16,7 @@ class GetDough(object):
     """This class represents what should be done to take a vane from oven and get a dough to cut station"""
 
     def __init__(self):
-        #сомневаюсь насчет переменных? по идее они должн быть после сортировки
+        # сомневаюсь насчет переменных? по идее они должн быть после сортировки
         self.plan_duration = 300
         self.chain = []
 
@@ -35,7 +35,6 @@ class GetDough(object):
     def set_position_by_oven(self):
         """Этот метод отдает команду позиционирования перед печью """
         pass
-
 
     def get_vane(self):
         """Тут описывается движение возьми лопаткку. """
@@ -70,3 +69,5 @@ class GetDough(object):
 class BaseRecipe(GetDough):
     """This class represents base recipe"""
     pass
+
+
