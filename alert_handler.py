@@ -1,32 +1,17 @@
-"""Этот модуль описывает поток мониторнга уведомлений от модуля Controllers.
-Типы покрываемых уведомлений (требует подтверждения)
-- exception (отказе оборудования, см вопрос ниже)
-- данные qr кода на получение заказа (входные данные: json "ref id": номер пункта выдачи).
-Вся(!) валидация qr кода реализована на стороне Controllers (а. распознан ли код,
-b. истек ли срок действия, с. заказ уже выдан. Вывод на экран сообщения о результате валидации также осуществляет
-модуля Controllers. НО если контролеры не валидируют готов заказ или нет, получается валиадция на обох сторонах.
-    ВОПРОСЫ:
-1. тип сообщения  от блока контролера (json, строка, еще что то?)
-2. описать класс EquipmentExceptions, какие exceptions кроме отказа оборудования будут, структура сообщения.
+"""Этот модуль описывает процедуру валиации qr кода
 
+Нужно написать:
+- метод, вызываемый контролерами (то есть перечень всех шагов, обычно самый последний после всех входящих методов)
+- перечень всех шагов, которые нужно сделать для валидации и вывода сообщения на экран
+
+входные данные: "ref id"и номер пункта выдачи
+
+Нужно проверить: есть ли такой заказ в TodaysOrders.current_orders_proceed, определить статус, вывести сообщение на
+экран
+Подумать, какие ошибки могут быть
 """
 
 from main_order_handler import TodaysOrders
-
-
-def main_alert_handler():
-    """мониторит все уведомления от блока Controllers, определяет какое и вызывает соответствующую функцию обработчик
-    :return handler()
-     """
-    pass
-
-
-
-
-
-def error_handler():
-    """Обрабатывает ошибки (не описано)"""
-    pass
 
 
 class QrcodeValidations(object):
@@ -50,27 +35,20 @@ class QrcodeValidations(object):
             # message read error
             # logging
             raise Exception
-    #
-    # def setdefault(self, key, default=None):
-    #     try:
-    #         return self[key]
-    #     except KeyError:
-    #         self[key] = default
-    #     return default
 
     def order_status_evaluation(self):
         """Проверяет статус заказа"""
         self.order_status = TodaysOrders.current_orders_proceed[self.order_refid] if self.order_refid in \
                                                                                      TodaysOrders.current_orders_proceed else "Not found"
 
-    def order_delivery_handler(self):
-        """Обрабатывает процедуру получения заказа (не описано)"""
-        pass
-
-    def order_status_handler(self,  ORDER_STATUSES_REPORTS):
+    def order_status_handler(self, ORDER_STATUSES_REPORTS):
         """Этот метод анализирует статус и запускает обработчик"""
         if self.order_status == "ready":
             self.order_delivery_handler()
             return "Сообщение о том, что заказ скоро будет доставлен"
         else:
-            return  ORDER_STATUSES_REPORTS[self.order_status]
+            return ORDER_STATUSES_REPORTS[self.order_status]
+
+    def order_delivery_handler(self):
+        """Обрабатывает процедуру получения заказа (не описано)"""
+        pass
