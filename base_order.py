@@ -18,16 +18,28 @@ class BaseOrder(object):
     ORDER_STATUS = ["received", "cooking", "ready", "informed", "packed", "wait to delivery", "delivered", "closed",
                     "failed_to_be_cooked", "not_delivered"]
 
-    def __init__(self):
-        self.ref_id: int
-        self.dish_1: object.__class__Dish__
-        self.dish_2: object.__class__Dish__
+    def __init__(self, new_order, ovens_reserved):
+        self.ref_id = new_order["refid"]
+        self.dishes = self.dish_creation(new_order, ovens_reserved)
         # вариант из ORDER_STATUS
-        self.status: str
-        self.oven_liquidation_time: datetime
-        self.liquidation_time_pick_point: datetime
-        self.pickup_point: int
-        self.delivery_time: datetime
+
+        # self.status: str
+        # self.oven_liquidation_time: datetime
+        # self.liquidation_time_pick_point: datetime
+        # self.pickup_point: int
+        # self.delivery_time: datetime
+
+    def dish_creation(self, new_order, ovens_reserved):
+        """Creates list of dishes in order"""
+        if len(new_order["dishes"]) == 2:
+            self.dishes = [BaseDish(dish, ovens_reserved[index]) for index, dish in enumerate(new_order["dishes"])]
+        else:
+            self.dishes = [BaseDish(new_order["dishes"][0], ovens_reserved[0])]
+        return self.dishes
+
+    def upload_data_from_db(self):
+        """Запускается процедура загрузки данных из БД для блюд и компонентов. Или нужно в дочернем классе сделать? """
+        pass
 
     def is_order_ready(self):
         """Boolean. Если оба блюда готовы, то готово, можно выдавать. Поменять статус self.status на ready
@@ -76,57 +88,79 @@ class BaseOrder(object):
          Что тут делаем по сути? Как записываем в бд, удаляем сами объект или ждем сборщика мусора?"""
         pass
 
+    def __str__(self):
+        return f"Заказ {self.ref_id}"
+
 
 class BaseDish(object):
     """Этот класс представляет собой шаблон блюда в заказе."""
-    DISH_STATUSES = ["received", "cooking", "ready", "delivered", "failed_to_cook"]
+    DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
 
-    def __init__(self):
-        # есть ли в БД у блюда какой то номер, присвоенный ранее. Как хранится информация о заказе в БД
-        # нужен ли Id блюда?
-        self.id = int
+    def __init__(self, dish_data, free_oven):
+        self.dough = BaseDough(halfstuff_id=dish_data[0])
+        self.sauce = dish_data[1]
+        self.filling = dish_data[2]
+        self.additive = dish_data[3]
 
-        self.dough: object
-        self.sauce: object
-        self.filling: object
-        self.additive: object
+        self.oven_unit = free_oven
 
-        self.status: str
-        self.oven_unit: object
-        self.time_starting_baking: datetime
-        self.pickup_point_unit: int
+    # def oven_reserve_for_dish(self, free_oven):
+    #     """ Метод вызываем equipment.oven_reserve()"""
+    #     self.oven_unit = free_oven.get_first_free_oven()
+    #     free_oven.oven_reserve(self.oven_unit)
+    #     return self.oven_unit
 
-        # тут собираются в каком то виде все чейны, каждый элемент списка атомарен
-        self.chain = []
+    def __str__(self):
+        return f"Тесто {self.dough}"
 
-    def oven_reserve_for_dish(self):
-        """Это группа функций назначает печь для каждого блюда. ДОПИСАТЬ:
-        - как смарт экран проверяет печи, есть ли кокой то резерв?
-        - как в БД описывается
-        - как органзована работа со временем занятости печи (когда занята, когда свободная
-        """
-        pass
+    def __repr__(self):
+        return f"Блюдо состоит из {self.dough} \n Зарезервирована печь {self.oven_unit}"
 
-
+# class BaseDish(object):
+#     """Этот класс представляет собой шаблон блюда в заказе."""
+#     DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
+#
+#     def __init__(self):
+#         self.dough: object
+#         self.sauce: object
+#         self.filling: object
+#         self.additive: object
+#
+#         self.status: str
+#         self.oven_unit: int
+#         self.time_starting_baking: datetime
+#         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
+#         self.pickup_point_unit: int
+#         # тут собираются в каком то виде все чейны, каждый элемент списка атомарен
+#         self.chain = []
+#
+#     def oven_reserve_for_dish(self):
+#         """ Метод вызываем equipment.oven_reserve()
+#         """
+#         pass
+#
+#     def dish_chain_create(self):
+#         """Тут собираем вызов функций по готовке блюда"""
+#         pass
+#
+#
 class BasePizzaPart(object):
-    """Базовый класс компонента пиццы"""
+    """Базовый класс компонента пиццы.
+    self.halfstuff_cell: строка, передаваемая robotic Arm
+    считаем, что за искл начинки всего по 1 порции (указано в portion_qt"""
 
-    def __init__(self):
-        self.refid = int
-        self.halfstuff_cell_id = int
-        self.chain = ["структура данных для чейна пока не определена"]
+    PORTION_QT = 1
+
+    def __init__(self, halfstuff_id = 23,
+                 halfstuff_cell="ячейка A1 3 из 6"):
+        # нужен ли id?
+        # self.refid = int
+        self.halfstuff_id = halfstuff_id
+        self.halfstuff_cell = halfstuff_cell
+        # self.chain = ["структура данных для чейна пока не определена"]
         # нужно ли это время? где используем
-        self.cooking_duration: datetime
+        # self.cooking_duration: datetime
 
-    def upload_dough_info(self):
-        """Эта функция делает select из БД. Таблица Dough, загружает:
-         - чейн для теста
-         - данные о времени (если они в отдельной таблице)
-         - данные о том, какой п-ф нужен
-         Коннект в отдельной фнукции
-         """
-        # database_connect()
-        pass
 
     def checking_available(self):
         """Эта функция делает проверяет есть ли доступные полуфабрикаты и как то обновляет резерв (см вопрос про
@@ -145,9 +179,11 @@ class BasePizzaPart(object):
 class BaseDough(BasePizzaPart):
     """Этот класс содержит информацию о тесте, которое используется в заказанном блюде"""
 
-    def __init__(self):
-        super().__init__()
-    pass
+    def __init__(self, halfstuff_id):
+        super().__init__(halfstuff_id)
+
+    def __repr__(self):
+        return f"Тесто {self.halfstuff_id}"
 
 
 class BaseFilling(BasePizzaPart):
@@ -155,6 +191,7 @@ class BaseFilling(BasePizzaPart):
 
     def __init__(self):
         super().__init__()
+        # тут хранится словарь? с перечнем ингредиентов и кол-вом по рецепту
         self.halfstuff_cell_id = []
 
     def halfstuff_cell_evaluation(self):
@@ -164,6 +201,13 @@ class BaseFilling(BasePizzaPart):
 
 class BaseSauce(BasePizzaPart):
     """Этот класс содержит инфорамцию об используемом соусе"""
+
+    def __init__(self):
+        super().__init__()
+    pass
+
+class BaseAdditive(BasePizzaPart):
+    """Этот класс описывает добавку"""
 
     def __init__(self):
         super().__init__()

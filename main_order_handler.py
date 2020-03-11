@@ -1,36 +1,44 @@
 """Этот модуль управляет заказами и блюдами"""
 
+from base_order import BaseOrder
+from equipment import Oven
 
-class TodaysOrders(object):
+
+class TodaysOrders(Oven):
     """Этот класс содержит информацию о том, какие блюда готовятся в текущий момент. После обработки заказа,
     заказ удаляется из self.current_orders_proceed"""
 
     def __init__(self):
-        self.current_orders_proceed = {"refid": "object_order"}
-        pass
+        print("Start!")
+        # self.current_orders_proceed = {"refid": "object_order"}
+        super().__init__()
+        self.current_orders_proceed = {}
+        self.current_dishes_proceed = []
+        self.time_to_cook_all_dishes_left = 0
+        # self.ovens_available = {i:{"oven_id":i, "status": "free"} for i in range (1,22)}
 
     def checking_order_for_double(self):
-        """Этот метод проверяет есть ли уже заказ с таким ref id в обработке
+        """Этот метод проверяет есть ли уже заказ с таким ref id в обработке ил в БД (разбить на 2 или 3 метода)
         :return bool"""
         pass
 
-    def qr_validation(self):
-        """Этот метод валидирует qr-code """
+    def create_new_order(self, new_order):
+        """Этот метод создает экземпляр класса Order и заносит его в словарь self.current_orders_proceed"""
+        try:
+            ovens_reserved = [self.oven_reserve() for dish in new_order["dishes"]]
+            order = BaseOrder(new_order, ovens_reserved)
+            print("Создан заказ", order)
+            print("Блюда в заказе", order.dishes)
+            if order:
+                self.current_orders_proceed[order.ref_id] = order
+        # придумать ошибки какие могут быть
+        except ValueError:
+            pass
+
+    def fill_current_dishes_proceed(self):
+        """ Добавляет блюда заказа в self.current_dishes_proceed"""
         pass
 
-
-class TodaysDishes(object):
-    """Этот класс содержит информацию о том, какие блюда готовятся в текущий момент. После обработки заказа он
-    удаляется"""
-
-    def __init__(self):
-        self.current_dishes_proceed = {{}}
-    pass
-
-
-class CurrentSituation(object):
-    """Этот класс содержит информацию о том, что сейчас происходит в киоске"""
-
-    def __init__(self):
-
+    def func_name(self):
         pass
+

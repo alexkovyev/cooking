@@ -5,12 +5,6 @@
 import RBA
 import Controllers
 
-recipe = [{1: {"название": "возьми лопатку",
-               "duration": 40,
-               "params": ""}},
-          {2: {"название": "возьми тесто", "duration": 30, "params": ""}, }
-          ]
-
 
 class GetDough(object):
     """This class represents what should be done to take a vane from oven and get a dough to cut station"""
@@ -18,7 +12,6 @@ class GetDough(object):
     def __init__(self):
         # сомневаюсь насчет переменных? по идее они должн быть после сортировки
         self.plan_duration = 300
-        self.chain = []
 
     def move_to_oven(self, oven_id):
         """Этот метод описывает движение от текущего места (мы отслеживаем, где сейчас находится манипулятор? Как? до
@@ -64,6 +57,15 @@ class GetDough(object):
     def set_position_by_cut_station(self):
         """это типовая команда?"""
         pass
+
+    def get_in_cut_station(self):
+        """Заезжаем в станцию нарезки"""
+        pass
+
+    def free_capture(self):
+        """Освободить захват"""
+        pass
+
 
 
 class BaseRecipe(GetDough):
