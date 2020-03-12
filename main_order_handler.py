@@ -3,10 +3,13 @@
 from base_order import BaseOrder
 from equipment import Oven
 
+from settings import QT_DISH_PER_ORDER
+
 
 class TodaysOrders(Oven):
-    """Этот класс содержит информацию о том, какие блюда готовятся в текущий момент. После обработки заказа,
-    заказ удаляется из self.current_orders_proceed"""
+    """Этот класс содержит информацию о том, какие блюда готовятся в текущий момент, содержит информацию о печах и
+    показываает время работы коиска. После завешения заказа, он удаляется из self.current_orders_proceed
+    """
 
     def __init__(self):
         print("Start!")
@@ -22,11 +25,11 @@ class TodaysOrders(Oven):
         :return bool"""
         pass
 
-    def create_new_order(self, new_order):
+    def create_new_order(self, new_order, QT_DISH_PER_ORDER):
         """Этот метод создает экземпляр класса Order и заносит его в словарь self.current_orders_proceed"""
         try:
             ovens_reserved = [self.oven_reserve() for dish in new_order["dishes"]]
-            order = BaseOrder(new_order, ovens_reserved)
+            order = BaseOrder(new_order, ovens_reserved, QT_DISH_PER_ORDER)
             print("Создан заказ", order)
             print("Блюда в заказе", order.dishes)
             if order:

@@ -1,4 +1,4 @@
-import datetime
+
 
 class BaseOrder(object):
     """Этот класс представляет шаблон заказа, формируемого в среде окружения для каждого полученного заказа
@@ -18,9 +18,9 @@ class BaseOrder(object):
     ORDER_STATUS = ["received", "cooking", "ready", "informed", "packed", "wait to delivery", "delivered", "closed",
                     "failed_to_be_cooked", "not_delivered"]
 
-    def __init__(self, new_order, ovens_reserved):
+    def __init__(self, new_order, ovens_reserved, QT_DISH_PER_ORDER):
         self.ref_id = new_order["refid"]
-        self.dishes = self.dish_creation(new_order, ovens_reserved)
+        self.dishes = self.dish_creation(new_order, ovens_reserved, QT_DISH_PER_ORDER)
         # вариант из ORDER_STATUS
 
         # self.status: str
@@ -29,9 +29,9 @@ class BaseOrder(object):
         # self.pickup_point: int
         # self.delivery_time: datetime
 
-    def dish_creation(self, new_order, ovens_reserved):
+    def dish_creation(self, new_order, ovens_reserved, QT_DISH_PER_ORDER):
         """Creates list of dishes in order"""
-        if len(new_order["dishes"]) == 2:
+        if len(new_order["dishes"]) == QT_DISH_PER_ORDER:
             self.dishes = [BaseDish(dish, ovens_reserved[index]) for index, dish in enumerate(new_order["dishes"])]
         else:
             self.dishes = [BaseDish(new_order["dishes"][0], ovens_reserved[0])]

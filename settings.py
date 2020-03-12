@@ -5,3 +5,5 @@ oven_liquidation_time = 30
 
 # время на получение заказа в ячейке
 liquidation_time_pick_point = 15
+
+QT_DISH_PER_ORDER = 2
