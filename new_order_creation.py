@@ -15,4 +15,12 @@ today_orders.create_new_order(new_order, QT_DISH_PER_ORDER)
 
 print("Остались печи", today_orders.oven_avalable)
 
-print(today_orders.oven_avalable)
+print("Так выглядит заказ", today_orders.current_orders_proceed)
+
+print("Это список блюд в TO", today_orders.current_dishes_proceed.values())
+
+
+
+
+
+

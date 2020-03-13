@@ -16,9 +16,11 @@ class TodaysOrders(Oven):
         # self.current_orders_proceed = {"refid": "object_order"}
         super().__init__()
         self.current_orders_proceed = {}
-        self.current_dishes_proceed = []
+        #Это список блюд в TO [Блюдо состоит из Тесто 2  Зарезервирована печь 21 Статус received,
+        # Блюдо состоит из Тесто 1  Зарезервирована печь 20 Статус received]
+        self.current_dishes_proceed = {}
         self.time_to_cook_all_dishes_left = 0
-        # self.ovens_available = {i:{"oven_id":i, "status": "free"} for i in range (1,22)}
+        # self.dishes_qt = 0
 
     def checking_order_for_double(self):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке ил в БД (разбить на 2 или 3 метода)
@@ -29,19 +31,25 @@ class TodaysOrders(Oven):
         """Этот метод создает экземпляр класса Order и заносит его в словарь self.current_orders_proceed"""
         try:
             ovens_reserved = [self.oven_reserve() for dish in new_order["dishes"]]
+            # ids = []
+            # for dish in new_order["dishes"]:
+            #     ids.append(self.dishes_qt)
+            #     self.dishes_qt += 1
             order = BaseOrder(new_order, ovens_reserved, QT_DISH_PER_ORDER)
             print("Создан заказ", order)
             print("Блюда в заказе", order.dishes)
             if order:
                 self.current_orders_proceed[order.ref_id] = order
+                self.fill_current_dishes_proceed(order)
         # придумать ошибки какие могут быть
         except ValueError:
             pass
 
-    def fill_current_dishes_proceed(self):
+    def fill_current_dishes_proceed(self, order):
         """ Добавляет блюда заказа в self.current_dishes_proceed"""
-        pass
+        for dish in order.dishes:
+            self.current_dishes_proceed[dish.id] = dish
 
-    def func_name(self):
+    def total_cooking_update(self):
         pass
 

@@ -18,12 +18,12 @@ class GetDough(object):
         назнаечнной печи. Исполнитель - RBA. Какую обратную связь от RBA получаем? как обрабатывает исключение"""
         # Нужно ли тут время и какие то координаты?
         result = RBA.move_to_oven(oven_id)
-        if result:
-            # что возвращаем?
-            return
-        else:
-            # эти ошибк описаны в библиотеке RBA, логируем? что делаем?
-            raise RBA.Exceptions.movement_error
+        # if result:
+        #     # что возвращаем?
+        #     return
+        # else:
+        #     # эти ошибк описаны в библиотеке RBA, логируем? что делаем?
+        #     raise RBA.Exceptions.movement_error
 
     def set_position_by_oven(self):
         """Этот метод отдает команду позиционирования перед печью """
@@ -37,13 +37,14 @@ class GetDough(object):
         """Тут описывается выезд из печи. Нужно ли делать отдельную команду?"""
         pass
 
-    def move_to_dough_station(self, dough_station_number):
+    def move_to_dough_station(self, halfstuff_cell):
         """Запускает движение к станции теста"""
         pass
 
-    def get_dough(self, dough_station_number):
+    def get_dough(self, halfstuff_cell):
         """отдает команду контролеру получить тесто"""
-        Controllers.give_dough(dough_station_number)
+        Controllers.give_dough(halfstuff_cell)
+        # запускает функцию списать п\ф
         pass
 
     def control_dough_position(self):
@@ -66,10 +67,15 @@ class GetDough(object):
         """Освободить захват"""
         pass
 
+    def get_dough(self):
+        self.move_to_oven()
+        self.set_position_by_oven()
+        # и так далее
 
 
-class BaseRecipe(GetDough):
-    """This class represents base recipe"""
-    pass
+class GetSauce(object):
+    """В этом классе описаны действия по добавлению соуса и добавки"""
 
-
+    @staticmethod
+    def get_sause(self, halfstuff_cell):
+        Controllers.sause(halfstuff_cell)
