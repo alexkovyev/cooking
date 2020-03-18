@@ -95,7 +95,7 @@ class BaseDish(object):
     DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
 
     def __init__(self, dish_data, free_oven, index):
-        self.id = f"{index}{round(time.time() * 100)}"
+        self.id = f"{index}{round(time.time() * 1000)}"
 
         dough_id, sauce_id, filling_id, additive_id = dish_data
         self.dough = BaseDough(halfstuff_id=dough_id)
