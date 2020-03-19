@@ -19,7 +19,6 @@ class BaseOrder(object):
     def __init__(self, new_order, ovens_reserved, QT_DISH_PER_ORDER):
         self.ref_id = new_order["refid"]
         self.dishes = self.dish_creation(new_order, ovens_reserved, QT_DISH_PER_ORDER)
-        # вариант из ORDER_STATUS
         self.status = "received"
         # self.oven_liquidation_time: datetime
         # self.liquidation_time_pick_point: datetime
@@ -86,8 +85,8 @@ class BaseOrder(object):
          Что тут делаем по сути? Как записываем в бд, удаляем сами объект или ждем сборщика мусора?"""
         pass
 
-    def __str__(self):
-        return f"Заказ {self.ref_id}"
+    def __repr__(self):
+        return f"Объект заказа {self.ref_id}"
 
 
 class BaseDish(object):

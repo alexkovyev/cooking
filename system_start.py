@@ -6,6 +6,7 @@ import random
 # from ss_server_handler import start_ss_server
 from main_order_handler import TodaysOrders
 from settings import QT_DISH_PER_ORDER
+from recipe import get_dough
 
 
 async def ss_server():
@@ -32,13 +33,16 @@ async def controllers_alert_handler():
         print("2 sec controllers_alert_handler", time.time())
 
 
-
 async def cooking():
     """Эта курутина обеспеивает вызов методов по приготовлению блюд и другой важной работе"""
     while True:
         print("Работает cooking", time.time())
-        await asyncio.sleep(3)
-        print("Остались печи", today_orders.oven_avalable)
+        while today_orders.current_dishes_proceed:
+            await get_dough(3, 6)
+            print("Остались печи", today_orders.oven_avalable)
+        else:
+            print("Dancing 3 secs")
+            await asyncio.sleep(3)
         print("Это заказы в current_orders_proceed", today_orders.current_orders_proceed)
         print("3 sec cooking", time.time())
 
