@@ -1,10 +1,11 @@
 """Этот модуль управляет заказами и блюдами"""
 
+
 from base_order import BaseOrder
-from equipment import Oven
+from equipment import Equipment
 
 
-class TodaysOrders(Oven):
+class TodaysOrders(Equipment):
     """Этот класс содержит информацию о том, какие блюда готовятся в текущий момент, содержит информацию о печах и
     показываает время работы коиска. После завешения заказа, он удаляется из self.current_orders_proceed
     """

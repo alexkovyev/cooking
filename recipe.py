@@ -56,8 +56,7 @@ async def get_dough(self, halfstuff_cell):
     """отдает команду контролеру получить тесто"""
     #Controllers.give_dough(halfstuff_cell)
     #запускает функцию списать п\ф
-
-
+    pass
 
     #
     #     def control_dough_position(self):
@@ -81,13 +80,13 @@ async def get_dough(self, halfstuff_cell):
     #         pass
 
 
-
-async def get_dough(oven_id, duration):
+async def get_dough(order_id, oven_id, duration):
+    print("Начинается chain", order_id)
     await move_to_oven(oven_id, duration)
     await set_position_by_oven()
     await get_vane()
     await get_out_the_oven()
-    print("Chain is over")
+    print(f"Chain {order_id} is over")
 
 
 # class GetDough(object):

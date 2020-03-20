@@ -15,6 +15,7 @@ async def ss_server():
      - уведомление о новом заказе
      - запрос оставшегося времени работы
      """
+    # эмуляция поступления заказа
     while True:
         print("Работает ss_server", time.time())
         n = random.randint(1, 50)
@@ -26,7 +27,9 @@ async def ss_server():
 
 
 async def controllers_alert_handler():
-    """Эта курутина обрабатывает уведомления от контроллеров: отказ оборудования и qr код """
+    """Эта курутина обрабатывает уведомления от контроллеров: отказ оборудования и qr код
+     Можно тут запустить методы мониторинга Арсения.
+     ВОПРОС: !!! как сделать блокировку на cooking? !!! """
     while True:
         print("Работает controllers_alert_handler", time.time())
         await asyncio.sleep(2)
@@ -37,9 +40,12 @@ async def cooking():
     """Эта курутина обеспеивает вызов методов по приготовлению блюд и другой важной работе"""
     while True:
         print("Работает cooking", time.time())
-        while today_orders.current_dishes_proceed:
-            await get_dough(3, 6)
-            print("Остались печи", today_orders.oven_avalable)
+        while today_orders.current_orders_proceed:
+            my_order = today_orders.current_orders_proceed.keys()
+            for dish in today_orders.current_dishes_proceed.keys():
+                print("Начинаю готовить блюдо", dish)
+                await get_dough(dish, 3, 6)
+                print("Остались печи", today_orders.oven_available)
         else:
             print("Dancing 3 secs")
             await asyncio.sleep(3)
@@ -56,6 +62,15 @@ async def start_working():
     await asyncio.gather(ss_task, controllers_task, cooking_task)
 
 
-if __name__ == "__main__":
+def work_init():
+    """Эта функция инициирует все необходимое для работы. Пока создание экземпляра класса TodaysOrders"""
     today_orders = TodaysOrders()
-    asyncio.run(start_working())
+    if today_orders.is_able_to_cook():
+        return today_orders
+    else:
+        raise ValueError ("Оборудование неисправно! Что делаем с ошибкой дальше")
+
+if __name__ == "__main__":
+    today_orders = work_init()
+    if today_orders:
+        asyncio.run(start_working())
