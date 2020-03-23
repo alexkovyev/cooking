@@ -1,6 +1,7 @@
 import time
 
 # from recipe import GetDough
+from recipe import GetDough
 
 
 class BaseOrder(object):
@@ -18,6 +19,7 @@ class BaseOrder(object):
 
     def __init__(self, new_order, ovens_reserved, QT_DISH_PER_ORDER):
         self.ref_id = new_order["refid"]
+        self.check_code = 4221
         self.dishes = self.dish_creation(new_order, ovens_reserved, QT_DISH_PER_ORDER)
         self.status = "received"
         # self.oven_liquidation_time: datetime
@@ -89,7 +91,7 @@ class BaseOrder(object):
         return f"Объект заказа {self.ref_id}"
 
 
-class BaseDish(object):
+class BaseDish(GetDough):
     """Этот класс представляет собой шаблон блюда в заказе."""
     DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
 
@@ -104,7 +106,7 @@ class BaseDish(object):
 
         self.oven_unit = free_oven
         self.status = "received"
-        self.chain_list = ["GetDough.get_dough()"]
+        self.chain_list = [self.get_dough]
         self.time_starting_baking = None
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         # self.pickup_point_unit: int
@@ -113,7 +115,8 @@ class BaseDish(object):
         return f"Тесто {self.dough}"
 
     def __repr__(self):
-        return f"Блюдо состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  Зарезервирована печь" \
+        return f"Блюдо {self.id} состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  " \
+               f"Зарезервирована печь" \
                f" {self.oven_unit} Статус {self.status}"
 
 

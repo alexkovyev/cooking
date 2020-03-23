@@ -4,6 +4,7 @@ WSGI сервер (? или простой HTTP)
 - get: время освобождения манипулятора (response - str в секундах длительность занятости киоска
 - put: новый заказ ref_id
 """
+import asyncio
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import socketserver
 
@@ -14,7 +15,7 @@ PORT_NUMBER = 8080
 class SS_server_handler(BaseHTTPRequestHandler):
     """Класс обертка для обработки запросов, логика обработки описывается в дочернх классах"""
     def do_head(self):
-        """Описывает формирование заголовка ответа для* запроса"""
+        """Описывает формирование заголовка ответа для запроса"""
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
@@ -52,7 +53,7 @@ def fetch_time_till_ready_to_cook():
     pass
 
 
-def new_order_handler():
+async def new_order_handler():
     """Эта функция иницирует создание экземляров класса новый заказ"""
     pass
 

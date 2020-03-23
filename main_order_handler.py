@@ -1,5 +1,6 @@
 """Этот модуль управляет заказами и блюдами"""
 
+import asyncio
 
 from base_order import BaseOrder
 from equipment import Equipment
@@ -13,8 +14,11 @@ class TodaysOrders(Equipment):
     def __init__(self):
         print("Start!")
         super().__init__()
+        # все заказы до того, как получены
         self.current_orders_proceed = {}
+        # все неприготовленые блюда
         self.current_dishes_proceed = {}
+        # какое сейчас блюдо готовим
         self.time_to_cook_all_dishes_left = 0
         self.left_to_do = []
 
@@ -41,6 +45,7 @@ class TodaysOrders(Equipment):
         """ Добавляет блюда заказа в self.current_dishes_proceed"""
         for dish in order.dishes:
             self.current_dishes_proceed[dish.id] = dish
+
 
     def total_cooking_update(self):
         pass
