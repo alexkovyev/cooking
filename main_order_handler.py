@@ -20,7 +20,7 @@ class TodaysOrders(Equipment):
         self.current_dishes_proceed = {}
         # какое сейчас блюдо готовим
         self.time_to_cook_all_dishes_left = 0
-        self.left_to_do = []
+        self.left_to_do = {}
 
     def checking_order_for_double(self):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке ил в БД (разбить на 2 или 3 метода)

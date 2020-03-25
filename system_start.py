@@ -18,9 +18,9 @@ async def ss_server():
     # эмуляция поступления заказа
     while True:
         print("Работает ss_server", time.time())
-        print()
         n = random.randint(1, 50)
         print("SS Ждет", n)
+        print()
         await asyncio.sleep(n)
         new_order = {"refid": (23+n), "dishes": [(2, 4, 6, 7), (1, 2, 4, 5)]}
         today_orders.create_new_order(new_order, QT_DISH_PER_ORDER)
@@ -29,13 +29,8 @@ async def ss_server():
         #     new_job = await get_dough(dish, 3, 6)
         #     cooking_quere.put((1, new_job))
         print("1 sec ss", time.time())
+        print()
 
-
-controllers_alarm = asyncio.Event()
-
-async def controllers_alarm_handler():
-    controllers_alarm.set()
-#     в какой таск добавить:  await event.wait(), event.clear()
 
 async def controllers_alert_handler():
     """Эта курутина обрабатывает уведомления от контроллеров: отказ оборудования и qr код
@@ -44,25 +39,37 @@ async def controllers_alert_handler():
     while True:
         print("Работает controllers_alert_handler", time.time())
         print()
+        result = random.choice([True, True, False])
+        if not result:
+            alert_number = round(time.time() * 1000)
+            print()
+            print("Получено сообщение от контролера", alert_number)
+            today_orders.left_to_do[alert_number] = result
         #Controllers.qr_code_monitoring()
         #Controllers.errors_monitoring()
         await asyncio.sleep(2)
         print("2 sec controllers_alert_handler", time.time())
+        print()
 
 
 async def cooking():
     """Эта курутина обеспеивает вызов методов по приготовлению блюд и другой важной работе"""
     while True:
         print("Работает cooking", time.time())
-        if today_orders.current_dishes_proceed.keys():
-            print("Начинаем готовить")
-            _, current_order = today_orders.current_dishes_proceed.popitem()
-            await get_dough(current_order.id, current_order.oven_unit, 6)
+        if today_orders.left_to_do:
+            print()
+            print("Cooking: Обрабатываем сообщение от контроллера")
+            print("классное сообщение от контролера", today_orders.left_to_do.popitem())
+            await asyncio.sleep(5)
         else:
-            print("Dancing 3 secs")
-            await asyncio.sleep(3)
-
-
+            if today_orders.current_dishes_proceed.keys():
+                print("Начинаем готовить")
+                _, current_order = today_orders.current_dishes_proceed.popitem()
+                await get_dough(current_order.id, current_order.oven_unit, 6)
+            else:
+                print("Dancing 3 secs")
+                await asyncio.sleep(3)
+                print()
 
 
         # while not cooking_quere.empty():
@@ -94,6 +101,5 @@ def work_init():
 
 if __name__ == "__main__":
     today_orders = work_init()
-    cooking_quere = asyncio.PriorityQueue()
     if today_orders:
         asyncio.run(start_working())
