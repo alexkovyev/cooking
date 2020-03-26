@@ -53,9 +53,9 @@ def fetch_time_till_ready_to_cook():
     pass
 
 
-async def new_order_handler():
+async def new_order_handler(new_order_refid, today_orders, QT_DISH_PER_ORDER):
     """Эта функция иницирует создание экземляров класса новый заказ"""
-    pass
+    today_orders.create_new_order(new_order_refid, QT_DISH_PER_ORDER)
 
 
 if __name__ == "__main__":

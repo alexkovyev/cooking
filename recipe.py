@@ -117,16 +117,6 @@ async def get_dough(order_id, oven_id, duration):
     await move_to_oven(oven_id, duration)
 
     print(f"Chain {order_id} is over")
-    #
-    # if a:
-    #     a = await set_position_by_oven()
-    #     if a:
-    #         a = await get_vane()
-    #         if a:
-    #             a = await get_out_the_oven()
-    #             print(f"Chain {order_id} is over")
-    # else:
-    #     print("Ошибка готовки")
 
 
 class GetDough(object):

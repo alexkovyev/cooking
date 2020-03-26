@@ -62,10 +62,16 @@ class Equipment(object):
         # self.oven_avalable[oven_id]["dish"] = 123
         return oven_id
 
-    def oven_broke_handler(self):
+    def oven_broke_handler(self, oven_alarm_id):
         """Это группа функций обрабатывает поломку печи.
         - поиск назначенных блюд на печь
         - замена печи на исправную
         - смена статуса, запись в БД ? Или это контролер делает?
         """
-        pass
+        print("Обрабатываем сломанную печь", oven_alarm_id)
+        if self.oven_available[oven_alarm_id]["status"] == "reserved":
+            print("Нужно переназначить печь")
+            # new_oven_id = self.get_first_free_oven()
+        self.oven_available[oven_alarm_id]["status"] = "broken"
+        print("Мы обработали печь")
+        print("Вот такие печи", self.oven_available)
