@@ -40,6 +40,7 @@ async def controllers_alert_handler(today_orders):
         qr_code = asyncio.create_task(qr_code_alarm(today_orders))
         oven_alarm_id = asyncio.create_task(oven_alarm(today_orders))
         await asyncio.gather(qr_code, oven_alarm_id)
+#         при приостановке нужно заблокировать qr код
 
 
 async def cooking(today_orders):
