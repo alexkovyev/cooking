@@ -18,6 +18,7 @@ class TodaysOrders(Equipment):
         self.current_dishes_proceed = {}
         self.time_to_cook_all_dishes_left = 0
         self.orders_requested_for_delivery = {}
+        self.pause_cooking = False
 
     def checking_order_for_double(self):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке ил в БД (разбить на 2 или 3 метода)

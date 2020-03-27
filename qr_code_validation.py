@@ -36,7 +36,7 @@ class QrcodeValidations(object):
             # logging
             raise Exception("код не найден, делай запрос в БД")
 
-     def order_status_evaluation(self):
+    def order_status_evaluation(self):
         """Проверяет статус заказа"""
         self.order_status = TodaysOrders.current_orders_proceed[self.order_refid] if self.order_refid in \
                                                                                      TodaysOrders.current_orders_proceed else "Not found"

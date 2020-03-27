@@ -24,6 +24,6 @@ async def oven_alarm(today_orders):
         # тут какая то классная команда контроллерам, ниже просто симуляция работы
         oven_broken_waiting_sec = random.randint(30, 60)
         await asyncio.sleep(oven_broken_waiting_sec)
-        broken_oven_id = random.randint(1, 22)
+        broken_oven_id = random.randint(1, 21)
         print("Сломалась печь", broken_oven_id)
         today_orders.oven_broke_handler(broken_oven_id)
