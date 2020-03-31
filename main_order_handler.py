@@ -1,4 +1,6 @@
 """Этот модуль управляет заказами и блюдами"""
+import time
+import asyncio
 
 from base_order import BaseOrder
 from equipment import Equipment
@@ -12,13 +14,14 @@ class TodaysOrders(Equipment):
     def __init__(self):
         print("Start!")
         super().__init__()
+        self.is_cooking_paused = False
         # все заказы до того, как получены
         self.current_orders_proceed = {}
         # все неприготовленые блюда
         self.current_dishes_proceed = {}
         self.time_to_cook_all_dishes_left = 0
         self.orders_requested_for_delivery = {}
-        self.pause_cooking = False
+
 
     def checking_order_for_double(self):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке ил в БД (разбить на 2 или 3 метода)
@@ -58,3 +61,17 @@ class TodaysOrders(Equipment):
     def total_cooking_update(self):
         pass
 
+    async def cooking_pause_handler(self):
+        print("Приостанавливаем работу")
+        #Controllers.disable_qrcode_validator()
+        #RBA.go_to_transport_position()
+        await asyncio.sleep(10)
+        pass
+
+    async def dish_delivery(self):
+        print("Cooking: Обрабатываем сообщение от контроллера")
+        print("классное сообщение от контролера - ВЫДАЧА заказа",
+        self.orders_requested_for_delivery.popitem())
+        await asyncio.sleep(5)
+        print("ВЫДАЧА заказа завершена")
+        print(time.time())

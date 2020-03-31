@@ -45,29 +45,28 @@ async def controllers_alert_handler(today_orders):
 
 async def cooking(today_orders):
     """Эта курутина обеспеивает вызов методов по приготовлению блюд и другой важной работе"""
+
     while True:
         print("Работает cooking", time.time())
-        if today_orders.pause_cooking:
-            print("Приостанавливаем работу")
-            await asyncio.sleep(10)
+        print("В списке на выдачу", today_orders.orders_requested_for_delivery)
+
+        if today_orders.is_cooking_paused:
+            await today_orders.cooking_pause_handler()
+            # print("Приостанавливаем работу")
+            # await asyncio.sleep(10)
+
         elif today_orders.orders_requested_for_delivery:
-            print()
-            print("Cooking: Обрабатываем сообщение от контроллера")
-            print(time.time())
-            print("классное сообщение от контролера", today_orders.orders_requested_for_delivery.popitem())
-            await asyncio.sleep(5)
-            print("обработка команды контроллера завершена")
-            print(time.time())
+            await today_orders.dish_delivery()
+
+        elif today_orders.current_dishes_proceed.keys():
+            print("Начинаем готовить")
+            _, current_order = today_orders.current_dishes_proceed.popitem()
+            await current_order.start_dish_cooking(today_orders)
+
         else:
-            if today_orders.current_dishes_proceed.keys():
-                print("Начинаем готовить")
-                _, current_order = today_orders.current_dishes_proceed.popitem()
-                await current_order.get_dough(current_order.id, current_order.oven_unit, 6)
-                # await get_dough(current_order.id, current_order.oven_unit, 6)
-            else:
-                print("Dancing 3 secs")
-                await asyncio.sleep(3)
-                print()
+            print("Dancing 3 secs")
+            await asyncio.sleep(3)
+            print()
 
 
 async def create_cooking_tasks(today_orders):
@@ -89,6 +88,11 @@ def start_cooking(equipment_data):
 
 def pause_cooking():
     today_orders.pause_cooking = True
+
+
+def start_cooking_after_pause():
+    today_orders.pause_cooking = False
+
 
 if __name__ == "__main__":
     equipment_data = {}

@@ -10,14 +10,14 @@ from RBA import Movement
 class GetDough(Movement):
     """This class represents what should be done to take a vane from oven and get a dough to cut station"""
 
-    # def __init__(self):
-    #     # сомневаюсь насчет переменных? по идее они должн быть после сортировки
-    #     self.plan_duration = 300
+    def __init__(self):
+        self.dough_plan_duration = 300
 
-    async def move_to_oven(self, result, oven_id):
+    async def move_to_oven(self):
         """Эта функция описывает движение от текущего места (мы отслеживаем, где сейчас находится манипулятор? Как? до
         назнаечнной печи. Исполнитель - RBA. Какую обратную связь от RBA получаем? как обрабатывает исключение"""
         # Нужно ли тут время и какие то координаты?
+
         # result = RBA.move_to_oven(oven_id, duration)
 
         print("RBA двигается к печи")
@@ -33,7 +33,7 @@ class GetDough(Movement):
         print("начинаю set_position_by_oven", time.time())
         result = await self.movement()
         if result:
-            print("set_position_by_oven is done")
+            print("спозиционировались перед печью")
             await self.get_vane()
         else:
             print("Ошибка позиционирования")
@@ -64,7 +64,7 @@ class GetDough(Movement):
         result = await self.movement()
         if result:
             print("приехали к станции теста")
-            await self.get_dough_st()
+            await self.controllers_get_dough()
         else:
             print("ошибка подъезда на станцию теста")
 
@@ -130,6 +130,51 @@ class GetDough(Movement):
         else:
             print("Не успешно освободии захват")
 
+    async def get_dough(self):
+        print("Начинается chain", self.id)
+        await self.move_to_oven()
+
+        print(f"Chain {self.id} is over")
+
+
+class GetSauce(Movement):
+    """В этом классе описаны действия по добавлению соуса и добавки. Подъезд к станции соуса не нужно.  Только """
+
+    def __init__(self):
+        self.sauce_plan_duration = 100
+
+    async def get_sauce(self):
+        # Controllers.sause()
+        print("Начинаем чейн соус", time.time())
+        result = await self.movement()
+        if result:
+            print("успешно полили соусом")
+            # await self.set_position_by_cut_station()
+        else:
+            print("Не успешно полили соусом")
+
+
+class Recipy(GetDough, GetSauce):
+
+    def __init__(self):
+        super().__init__()
+        self.recipy_list = [self.get_dough, self.get_sauce, self.get_dough, self.get_sauce]
+        # self.plan_duration = sum([self.dough_plan_duration, self.sauce_plan_duration])
+
+    async def start_dish_cooking(self, today_orders):
+        for chain in self.recipy_list:
+            if not today_orders.is_cooking_paused or today_orders.orders_requested_for_delivery:
+                print("Начинается 1 чейн")
+                print(self.plan_duration)
+                result = await chain()
+                if not result:
+                    break
+            if today_orders.is_pause_cooking:
+                await today_orders.cooking_pause_handler()
+            elif today_orders.orders_requested_for_delivery:
+                await today_orders.dish_delivery()
+
+    #
     # async def get_dough_st(self):
     #     """отдает команду контролеру получить тесто"""
     #     # Controllers.give_dough(halfstuff_cell)
@@ -143,14 +188,7 @@ class GetDough(Movement):
     #         await asyncio.gather(one, two)
     #     else:
     #         print("Ошибка получения теста")
-
-
-    async def get_dough(self, order_id, oven_id, duration):
-        print("Начинается chain", order_id)
-        await self.move_to_oven(oven_id, duration)
-
-        print(f"Chain {order_id} is over")
-
+    # #
     # async def turn_oven_on(self):
     #     print("включаем печь", time.time())
     #     result = await self.movement()
@@ -166,37 +204,9 @@ class GetDough(Movement):
     #         print("взяли томат")
     #     else:
     #         print("не ввзяли томат")
-
+    #
     # def get_dough(self, halfstuff_cell):
     #     """отдает команду контролеру получить тесто"""
     #     # Controllers.give_dough(halfstuff_cell)
     #     # запускает функцию списать п\ф
     #     pass
-
-    # def control_dough_position(self):
-    #     """отдаем команду на поправление теста"""
-    #     pass
-    #
-    # def move_to_cut_station(self):
-    #     """отдает команду на движение от станции теста на станцию нарезки"""
-    #     pass
-    #
-    # def set_position_by_cut_station(self):
-    #     """это типовая команда?"""
-    #     pass
-    #
-    # def get_in_cut_station(self):
-    #     """Заезжаем в станцию нарезки"""
-    #     pass
-    #
-    # def free_capture(self):
-    #     """Освободить захват"""
-    #     pass
-
-
-# class GetSauce(object):
-#     """В этом классе описаны действия по добавлению соуса и добавки"""
-#
-#     @staticmethod
-#     def get_sause(self, halfstuff_cell):
-#         Controllers.sause(halfstuff_cell)

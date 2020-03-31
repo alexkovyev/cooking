@@ -2,7 +2,7 @@ import time
 
 # from recipe import GetDough
 # from recipe import GetDough
-from recipy_class import GetDough
+from recipy_class import Recipy, GetDough, GetSauce
 
 
 class BaseOrder(object):
@@ -92,11 +92,12 @@ class BaseOrder(object):
         return f"Объект заказа {self.ref_id}"
 
 
-class BaseDish(GetDough):
+class BaseDish(Recipy):
     """Этот класс представляет собой шаблон блюда в заказе."""
     DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
 
     def __init__(self, dish_data, free_oven_id, index):
+        super().__init__()
         self.id = f"{index}{round(time.time() * 1000)}"
 
         dough_id, sauce_id, filling_id, additive_id = dish_data
@@ -111,6 +112,7 @@ class BaseDish(GetDough):
         self.time_starting_baking = None
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         # self.pickup_point_unit: int
+        self.plan_duration = sum([self.dough.dough_plan_duration, self.sauce.sauce_plan_duration])
 
     def __repr__(self):
         return f"Блюдо {self.id} состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  " \
@@ -145,21 +147,23 @@ class BasePizzaPart(object):
         pass
 
 
-class BaseDough(BasePizzaPart):
+class BaseDough(BasePizzaPart, GetDough):
     """Этот класс содержит информацию о тесте, которое используется в заказанном блюде"""
 
     def __init__(self, halfstuff_id):
         super().__init__(halfstuff_id)
+        GetDough.__init__(self)
 
     def __repr__(self):
         return f"Тесто {self.halfstuff_id}"
 
 
-class BaseSauce(BasePizzaPart):
+class BaseSauce(BasePizzaPart, GetSauce):
     """Этот класс содержит инфорамцию об используемом соусе"""
 
     def __init__(self, halfstuff_id):
         super().__init__(halfstuff_id)
+        GetSauce.__init__(self)
 
     def __repr__(self):
         return f"Соус {self.halfstuff_id}"
