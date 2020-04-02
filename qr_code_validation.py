@@ -11,7 +11,7 @@
 Подумать, какие ошибки могут быть
 """
 
-from main_order_handler import TodaysOrders
+from PBM_main import TodaysOrders
 
 
 class QrcodeValidations(object):

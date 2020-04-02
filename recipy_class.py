@@ -21,6 +21,7 @@ class GetDough(Movement):
         # result = RBA.move_to_oven(oven_id, duration)
 
         print("RBA двигается к печи")
+        print("Доступ к параметрам есть", self.dough.halfstuff_cell)
         result = await self.movement()
         if result:
             print("RBA успешно подъехал к печи")

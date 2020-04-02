@@ -4,7 +4,7 @@ import time
 import random
 
 from ss_server_handler import new_order_handler
-from main_order_handler import TodaysOrders
+from PBM_main import TodaysOrders
 from controllers_handler import qr_code_alarm, oven_alarm
 from settings import QT_DISH_PER_ORDER
 
@@ -60,8 +60,8 @@ async def cooking(today_orders):
 
         elif today_orders.current_dishes_proceed.keys():
             print("Начинаем готовить")
-            _, current_order = today_orders.current_dishes_proceed.popitem()
-            await current_order.start_dish_cooking(today_orders)
+            _, current_dish = today_orders.current_dishes_proceed.popitem()
+            await current_dish.start_dish_cooking(today_orders)
 
         else:
             print("Dancing 3 secs")
