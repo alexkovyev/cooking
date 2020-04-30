@@ -5,6 +5,7 @@ def go_to_db_get_data():
     equipment_data = ('супер важная информация об оборудовании', 'из БД')
     return equipment_data
 
+
 def start_testing():
     """Тут вызываем методы контролеров по тестированию оборудования"""
     equipment_data = go_to_db_get_data()
@@ -19,3 +20,9 @@ def start_testing():
                       }
     print("Оборудование протестировано, исправно")
     return is_equipment_ok, equipment_data
+
+
+def parse_recipes():
+    """Парсит все рецепты в директории и возвращает словарь вида: описать"""
+    recipes = {"имя рецепта": "параметры"}
+    return recipes

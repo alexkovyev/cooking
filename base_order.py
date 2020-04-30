@@ -21,10 +21,8 @@ class BaseOrder(object):
         self.qt_dish_per_order = QT_DISH_PER_ORDER
 
         self.ref_id = new_order["refid"]
-        self.check_code = 4221
         self.dishes = self.dish_creation(new_order, ovens_reserved)
         self.status = "received"
-        # self.oven_liquidation_time: datetime
         self.liquidation_time_pick_point = None
         self.pickup_point = None
         # self.delivery_time: datetime
@@ -89,93 +87,29 @@ class BaseOrder(object):
         return f"Объект заказа {self.ref_id}"
 
 
-class BasePizzaPart(object):
-    """Базовый класс компонента пиццы.
-    self.halfstuff_cell: строка, передаваемая robotic Arm
-    считаем, что за искл начинки всего по 1 порции (указано в portion_qt"""
-
-    PORTION_QT = 1
-
-    def __init__(self, halfstuff_id=23, halfstuff_cell="ячейка A1 3 из 6"):
-
-        self.halfstuff_id = halfstuff_id
-        self.halfstuff_cell = halfstuff_cell
-        # нужно ли это время? где используем
-        # self.cooking_duration: datetime
-
-
-class BaseDough(BasePizzaPart, GetDough):
-    """Этот класс содержит информацию о тесте, которое используется в заказанном блюде"""
-
-    def __init__(self, halfstuff_id):
-        super().__init__(halfstuff_id)
-        GetDough.__init__(self)
-
-    def __repr__(self):
-        return f"Тесто {self.halfstuff_id}"
-
-
-class BaseSauce(BasePizzaPart, GetSauce):
-    """Этот класс содержит инфорамцию об используемом соусе"""
-
-    def __init__(self, halfstuff_id):
-        super().__init__(halfstuff_id)
-        GetSauce.__init__(self)
-
-    def __repr__(self):
-        return f"Соус {self.halfstuff_id}"
-
-
-class BaseFilling(BasePizzaPart):
-    """Этот класс содержит информацию о начинке. НУЖНЫ ответы о начинке БД"""
-
-    def __init__(self, filling_id):
-        super().__init__()
-
-        # тут хранится словарь? с перечнем ингредиентов и кол-вом по рецепту
-        self.halfstuff = {"halfstuff_1": ("расположение", "тип нарезки"),
-                          "halfstuff_2": ("расположение", "тип нарезки")}
-
-    def halfstuff_cell_evaluation(self):
-        """Отдельная группа функций по назначению пф, так как он не один, а несколько """
-        pass
-
-    def __repr__(self):
-        return f"Начинка {self.halfstuff_id}"
-
-
-class BaseAdditive(BasePizzaPart):
-    """Этот класс описывает добавку"""
-
-    def __init__(self, halfstuff_id):
-        super().__init__(halfstuff_id)
-
-    def __repr__(self):
-        return f"Добавка {self.halfstuff_id}"
-
-
-class BaseDish(Recipy):
+class BaseDish(object):
     """Этот класс представляет собой шаблон блюда в заказе."""
     DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
 
     def __init__(self, dish_data, free_oven_id, index):
-        super().__init__()
         # создаем уникальное имя блюда
         self.id = f"{index}{round(time.time() * 1000)}"
         # распаковываем данные о том, из чего состоит блюдо
-        dough_id, sauce_id, filling_id, additive_id = dish_data
-        self.dough = BaseDough(halfstuff_id=dough_id)
-        self.sauce = BaseSauce(halfstuff_id=sauce_id)
-        self.filling = filling_id
-        self.additive = BaseAdditive(halfstuff_id=additive_id)
+        dough_id, sauce_data, filling_data, additive_id = dish_data
+        self.dough = BaseDough(dough_id)
+        self.sauce = BaseSauce(sauce_data)
+        self.filling = BaseFilling(filling_data)
+        self.additive = BaseAdditive(additive_id)
 
         self.oven_unit = free_oven_id
+        # параметр
+        self.oven_recipe = 1
         self.status = "received"
         # self.chain_list = [self.get_dough(self.id, self.oven_unit, 6)]
         self.time_starting_baking = None
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         # self.pickup_point_unit: int
-        self.plan_duration = sum([self.dough.dough_plan_duration, self.sauce.sauce_plan_duration])
+        # self.plan_duration = sum([self.dough.dough_plan_duration, self.sauce.sauce_plan_duration])
 
     def halfstuff_cell_evaluation(self):
         """Эта группа фнукций запускает процедуру назначения пф и назначает ячейку для каждого пф."""
@@ -191,4 +125,103 @@ class BaseDish(Recipy):
     def __repr__(self):
         return f"Блюдо {self.id} состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  " \
                f"\"Зарезервирована печь\" {self.oven_unit} Статус {self.status}"
+
+
+
+class BasePizzaPart(object):
+    """Базовый класс компонента пиццы.
+    self.halfstuff_id идентификационный номер полуфабриката
+    self.halfstuff_cell: строка, передаваемая robotic Arm или контроллерам 'ячейка A1 3 из 6'
+    считаем, что за искл начинки всего по 1 порции (указано в portion_qt"""
+
+    def cell_evaluation(self):
+        pass
+
+
+class BaseDough(BasePizzaPart):
+    """Этот класс содержит информацию о тесте, которое используется в заказанном блюде"""
+
+    def __init__(self, dough_id):
+        self.halfstuff_id = dough_id
+        self.halfstuff_cell = None
+
+    def __repr__(self):
+        return f"Тесто {self.halfstuff_id}"
+
+
+class BaseSauce(BasePizzaPart):
+    """Этот класс содержит инфорамцию об используемом соусе"""
+
+    def __init__(self, sauce_data):
+        self.sauce_id = sauce_data["sauce_id"]
+        self.sauce_content = sauce_data["sauce_content"]
+        # sauce_cell=[(1, 5), (2, 25)] 0 - id насосной станции, 1 - колво
+        self.sauce_cell = None
+
+    def __repr__(self):
+        return f"Соус {self.sauce_id}"
+
+
+class BaseFilling(object):
+    """Этот класс содержит информацию о начинке."""
+
+    def __init__(self, filling_data):
+        self.filling_id = filling_data["filling_id"]
+        self.filling_content = filling_data["filling_content"]
+        # тут хранится словарь? с перечнем ингредиентов и кол-вом по рецепту
+        self.filling_halfstuffs = {"halfstuff_1": ("расположение", "тип нарезки"),
+                          "halfstuff_2": ("расположение", "тип нарезки")}
+
+    def __repr__(self):
+        return f"Начинка {self.filling_id}"
+
+
+class BaseAdditive(BasePizzaPart):
+    """Этот класс описывает добавку"""
+
+    def __init__(self, additive_id):
+        self.halfstuff_id = additive_id
+        self.halfstuff_cell = None
+
+    def __repr__(self):
+        return f"Добавка {self.halfstuff_id}"
+
+#
+# class BaseDish(Recipy):
+#     """Этот класс представляет собой шаблон блюда в заказе."""
+#     DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
+#
+#     def __init__(self, dish_data, free_oven_id, index):
+#         super().__init__()
+#         # создаем уникальное имя блюда
+#         self.id = f"{index}{round(time.time() * 1000)}"
+#         # распаковываем данные о том, из чего состоит блюдо
+#         dough_id, sauce_id, filling_id, additive_id = dish_data
+#         self.dough = BaseDough(halfstuff_id=dough_id)
+#         self.sauce = BaseSauce(halfstuff_id=sauce_id)
+#         self.filling = filling_id
+#         self.additive = BaseAdditive(halfstuff_id=additive_id)
+#
+#         self.oven_unit = free_oven_id
+#         self.status = "received"
+#         # self.chain_list = [self.get_dough(self.id, self.oven_unit, 6)]
+#         self.time_starting_baking = None
+#         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
+#         # self.pickup_point_unit: int
+#         self.plan_duration = sum([self.dough.dough_plan_duration, self.sauce.sauce_plan_duration])
+#
+#     def halfstuff_cell_evaluation(self):
+#         """Эта группа фнукций запускает процедуру назначения пф и назначает ячейку для каждого пф."""
+#         # result = do_some_great_db_procedure
+#         # unpack_results если нужно
+#         # self.dough.halfstuff_cell = result[0]
+#         # self.sauce.halfstuff_cell = result[0]
+#         # self.sauce.halfstuff_cell = result[1]
+#         # self.filling = None
+#         # self.additive.halfstuff_cell = result[3]
+#         pass
+#
+#     def __repr__(self):
+#         return f"Блюдо {self.id} состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  " \
+#                f"\"Зарезервирована печь\" {self.oven_unit} Статус {self.status}"
 

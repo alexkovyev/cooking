@@ -18,6 +18,7 @@ class Equipment(object):
             self.are_pick_up_points_ok = equipment_data["pick_up_points"]
             print("all good", self.oven_available)
         except KeyError:
+            # тут ничего не проверяется, так как если в переменной пусто, то все равно исполнится код
             print("Ошибка, не найдена информация об оборудовании")
 
     # def update_oven_status(self, available_ovens_from_db):

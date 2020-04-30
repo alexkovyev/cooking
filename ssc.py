@@ -1,5 +1,5 @@
 import start_PBM as Pbm
-from utils import start_testing
+from utils import start_testing, parse_recipes
 
 
 def pause_cooking():
@@ -12,8 +12,9 @@ def main():
     # какая то нужна информация контроллерам, если не нужно, удаляем
 
     test_result, equipment_data = start_testing()
-    if test_result:
-        cooking = Pbm.start(equipment_data)
+    recipes = parse_recipes()
+    if test_result and recipes:
+        cooking = Pbm.start(equipment_data, recipes)
     else:
         raise ValueError("Оборудование неисправно, нельзя работать")
 

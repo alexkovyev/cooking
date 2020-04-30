@@ -4,6 +4,7 @@ import asyncio
 import random
 import time
 from aiohttp import web
+from contextvars import ContextVar
 
 
 # from ss_server_handler import new_order_handler
@@ -37,13 +38,20 @@ async def cooking(today_orders):
         elif today_orders.orders_requested_for_delivery:
             await today_orders.dish_delivery()
 
-        elif today_orders.current_dishes_proceed.keys():
-            print("Начинаем готовить")
-            _, current_dish = today_orders.current_dishes_proceed.popitem()
-            await current_dish.start_dish_cooking(today_orders)
+        elif today_orders.current_orders_proceed.keys():
+            print("Начнаем готовить")
+            _, current_dish = today_orders.current_orders_proceed.popitem()
+            print(current_dish)
+
+        # elif today_orders.current_dishes_proceed.keys():
+        #     print("Начинаем готовить")
+        #     _, current_dish = today_orders.current_dishes_proceed.popitem()
+        #     print(current_dish)
+        #     # await current_dish.start_dish_cooking(today_orders)
 
         else:
             print("Dancing 3 secs")
+            today_orders.time_to_cook_all_dishes_left += 55
             await asyncio.sleep(3)
             print()
 
@@ -62,11 +70,12 @@ async def create_tasks(app, today_orders):
     await asyncio.gather(controllers_task, cooking_task)
 
 
-def start(equipment_data):
+def start(equipment_data, recipes):
     """Эта функция инициирует все необходимое для работы. Пока создание экземпляра класса TodaysOrders
     Добавить создание event-loop и инициацию класса контролеры"""
-    today_orders = PizzaBotMain(equipment_data)
+    today_orders = PizzaBotMain(equipment_data, recipes)
     print("Начинается код start cooking")
     app = create_server()
+    app["today_orders"]=today_orders
     asyncio.run(create_tasks(app, today_orders))
 
