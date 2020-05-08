@@ -1,5 +1,6 @@
 """Тут собраны служебные функции"""
 
+
 def go_to_db_get_data():
     # запрос к БД если нужно контроллерам для проверки работоспособности оборудования
     equipment_data = ('супер важная информация об оборудовании', 'из БД')
@@ -22,7 +23,7 @@ def start_testing():
     return is_equipment_ok, equipment_data
 
 
-def parse_recipes():
+def parse_recipes(recipe_data):
     """Парсит все рецепты в директории и возвращает словарь вида: описать"""
-    recipes = {"имя рецепта": "параметры"}
+    recipes = recipe_data
     return recipes

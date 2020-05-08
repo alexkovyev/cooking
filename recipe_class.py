@@ -139,13 +139,13 @@ class GetDough(Movement):
 
 
 class GetSauce(Movement):
-    """В этом классе описаны действия по добавлению соуса и добавки. Подъезд к станции соуса не нужно.  Только """
+    """В этом классе описаны действия по добавлению соуса. """
 
     def __init__(self):
         self.sauce_plan_duration = 100
 
     async def get_sauce(self):
-        # Controllers.sause()
+        # Controllers.sauce()
         print("Начинаем чейн соус", time.time())
         result = await self.movement()
         if result:
@@ -153,6 +153,22 @@ class GetSauce(Movement):
             # await self.set_position_by_cut_station()
         else:
             print("Не успешно полили соусом")
+
+
+class Filling(Movement):
+    """В этом классе собираются данные о том, как готовить начинку"""
+
+    async def change_capture(self):
+        """Меняем захват на тот, которым нужно брать п\ф. ВОПРОС: зависит ли захват от типа п\ф"""
+        pass
+
+    async def go_to_fridge(self):
+        """Едем от точки Х к холодильнику"""
+        pass
+
+    async def set_position_by_fridge(self):
+        "Позиционирование напротив холодильника"
+        pass
 
 
 class Recipy(GetDough, GetSauce):

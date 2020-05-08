@@ -81,6 +81,12 @@ class PizzaBotMain(object):
 
         for dish in order.dishes:
             self.current_dishes_proceed[dish.id] = dish
+
+    def get_dish_recipe(self):
+
+        pass
+
+
     #
     # def total_cooking_update(self):
     #     pass

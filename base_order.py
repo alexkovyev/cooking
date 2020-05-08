@@ -144,6 +144,7 @@ class BaseDough(BasePizzaPart):
     def __init__(self, dough_id):
         self.halfstuff_id = dough_id
         self.halfstuff_cell = None
+        self.recipy_data = None
 
     def __repr__(self):
         return f"Тесто {self.halfstuff_id}"
