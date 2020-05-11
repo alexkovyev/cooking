@@ -32,20 +32,29 @@ class PizzaBotMain(object):
 
     async def get_order_content_from_db(self, new_order_id):
         """Этот метод вызывает процедуру 'Получи состав блюд в заказе' и возвращает словарь вида
-        {"refid": 32131, "dishes": [(2, {"sauce_id":2, "sauce_content":[("id","qt"), ("id","qt")]},
-                                   {"filling_id":1, "filling_content":((6,1),(4,1),(6,1),(9,2))}, 7),
-                                    (1, 2, {"filling_id":2, "filling_content":((6,1),(4,1),(6,1),(9,2))}, 5)]}
+        {"refid": new_order_id,
+                     "dishes": [
+                         {"dough": {"id":2},
+                          "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
+                         "filling": {"id": 1, "content": ((6, 1), (4, 1), (6, 1), (9, 2))},
+                         "additive_id":{"id": 7}},
+                         {"dough": {"id":1},
+                          "sauce": {"id": 3, "content": ((1, 5), (2, 25))},
+                         "filling": {"id": 4, "content": ((6, 1), (4, 1), (6, 1), (9, 2))},
+                         "additive_id":{"id": 1}},
+                     ]
+                     }
         """
         new_order = {"refid": new_order_id,
                      "dishes": [
-                         (2,
-                          {"sauce_id": 2, "sauce_content": [(1, 5), (2, 25)]},
-                         {"filling_id": 1, "filling_content": ((6, 1), (4, 1), (6, 1), (9, 2))},
-                          7),
-                         (1,
-                          {"sauce_id": 1, "sauce_content": [(2, 10), (3, 20)]},
-                          {"filling_id": 2, "filling_content": ((6, 1), (4, 1), (6, 1), (9, 2))},
-                          5)
+                         {"dough": {"id":2},
+                          "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
+                         "filling": {"id": 1, "content": ((6, 1), (4, 1), (6, 1), (9, 2))},
+                         "additive_id":{"id": 7}},
+                         {"dough": {"id":1},
+                          "sauce": {"id": 3, "content": ((1, 5), (2, 25))},
+                         "filling": {"id": 4, "content": ((6, 1), (4, 1), (6, 1), (9, 2))},
+                         "additive_id":{"id": 1}},
                      ]
                      }
         return new_order
@@ -53,11 +62,7 @@ class PizzaBotMain(object):
     def create_new_order(self, new_order):
         """Этот метод создает экземпляр класса Order и заносит его в словарь self.current_orders_proceed
         @:params:
-        new_order - это словарь с блюдами вида
-        {"refid": 32131, "dishes": [(2, {"sauce_id":2, "sauce_content":[("id","qt"), ("id","qt")]},
-                                   {"filling_id":1, "filling_content":((6,1),(4,1),(6,1),(9,2))}, 7),
-                                    (1, 2, {"filling_id":2, "filling_content":((6,1),(4,1),(6,1),(9,2))}, 5)]}
-        получаемый из БД в рамках метода get_order_content_from_db """
+        new_order - это словарь с блюдами, получаемый из БД в рамках метода get_order_content_from_db """
 
         try:
             # резервируем печи для заказа

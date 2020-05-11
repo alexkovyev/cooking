@@ -11,3 +11,9 @@ class Movement():
         result = random.choice([True, True, False])
         print("Работа робота завершена")
         return result
+
+
+class RBA(Movement):
+
+    async def move_to_oven(self):
+        print("RBA двигается к печи")

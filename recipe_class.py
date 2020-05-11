@@ -3,26 +3,22 @@ import asyncio
 import time
 import random
 
-from RBA import Movement
+from RBA import RBA
 # import Controllers
 
 
-class GetDough(Movement):
+class GetDough(object):
     """This class represents what should be done to take a vane from oven and get a dough to cut station"""
 
     def __init__(self):
         self.dough_plan_duration = 300
 
-    async def move_to_oven(self):
-        """Эта функция описывает движение от текущего места (мы отслеживаем, где сейчас находится манипулятор? Как? до
-        назнаечнной печи. Исполнитель - RBA. Какую обратную связь от RBA получаем? как обрабатывает исключение"""
-        # Нужно ли тут время и какие то координаты?
+    async def move_to_oven(self, chain_time, oven_id):
+        """Эта функция описывает движение до назнаечнной печи. Исполнитель - RBA."""
 
-        # result = RBA.move_to_oven(oven_id, duration)
 
-        print("RBA двигается к печи")
         print("Доступ к параметрам есть", self.dough.halfstuff_cell)
-        result = await self.movement()
+        result = await RBA.move_to_oven(oven_id)
         if result:
             print("RBA успешно подъехал к печи")
             await self.set_position_by_oven()

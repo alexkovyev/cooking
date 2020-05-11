@@ -29,6 +29,7 @@ class BaseOrder(object):
 
     def dish_creation(self, new_order, ovens_reserved):
         """Creates list of dishes objects in order"""
+        # сделано так, тк номер в списке придает "уникальность" id блюду
         if len(new_order["dishes"]) == self.qt_dish_per_order:
             self.dishes = [BaseDish(dish, ovens_reserved[index], index) for index, dish in enumerate(new_order[
                                                                                                          "dishes"])]
@@ -95,15 +96,12 @@ class BaseDish(object):
         # создаем уникальное имя блюда
         self.id = f"{index}{round(time.time() * 1000)}"
         # распаковываем данные о том, из чего состоит блюдо
-        dough_id, sauce_data, filling_data, additive_id = dish_data
-        self.dough = BaseDough(dough_id)
-        self.sauce = BaseSauce(sauce_data)
-        self.filling = BaseFilling(filling_data)
-        self.additive = BaseAdditive(additive_id)
+        self.dough = BaseDough(dish_data["dough"])
+        self.sauce = BaseSauce(dish_data["sauce"])
+        self.filling = BaseFilling(dish_data["filling"])
+        self.additive = BaseAdditive(dish_data["additive"])
 
         self.oven_unit = free_oven_id
-        # параметр
-        self.oven_recipe = 1
         self.status = "received"
         # self.chain_list = [self.get_dough(self.id, self.oven_unit, 6)]
         self.time_starting_baking = None
@@ -141,8 +139,8 @@ class BasePizzaPart(object):
 class BaseDough(BasePizzaPart):
     """Этот класс содержит информацию о тесте, которое используется в заказанном блюде"""
 
-    def __init__(self, dough_id):
-        self.halfstuff_id = dough_id
+    def __init__(self, dough_data):
+        self.halfstuff_id = dough_data["id"]
         self.halfstuff_cell = None
         self.recipy_data = None
 
@@ -154,8 +152,8 @@ class BaseSauce(BasePizzaPart):
     """Этот класс содержит инфорамцию об используемом соусе"""
 
     def __init__(self, sauce_data):
-        self.sauce_id = sauce_data["sauce_id"]
-        self.sauce_content = sauce_data["sauce_content"]
+        self.sauce_id = sauce_data["id"]
+        self.sauce_content = sauce_data["content"]
         # sauce_cell=[(1, 5), (2, 25)] 0 - id насосной станции, 1 - колво
         self.sauce_cell = None
 
@@ -167,8 +165,8 @@ class BaseFilling(object):
     """Этот класс содержит информацию о начинке."""
 
     def __init__(self, filling_data):
-        self.filling_id = filling_data["filling_id"]
-        self.filling_content = filling_data["filling_content"]
+        self.filling_id = filling_data["id"]
+        self.filling_content = filling_data["content"]
         # тут хранится словарь? с перечнем ингредиентов и кол-вом по рецепту
         self.filling_halfstuffs = {"halfstuff_1": ("расположение", "тип нарезки"),
                           "halfstuff_2": ("расположение", "тип нарезки")}
@@ -180,8 +178,8 @@ class BaseFilling(object):
 class BaseAdditive(BasePizzaPart):
     """Этот класс описывает добавку"""
 
-    def __init__(self, additive_id):
-        self.halfstuff_id = additive_id
+    def __init__(self, additive_data):
+        self.halfstuff_id = additive_data["id"]
         self.halfstuff_cell = None
 
     def __repr__(self):
