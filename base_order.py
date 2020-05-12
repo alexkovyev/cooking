@@ -1,6 +1,6 @@
 import time
 
-# from recipy_class import Recipy, GetDough, GetSauce
+from recipe_class import Recipy
 from settings import QT_DISH_PER_ORDER
 
 
@@ -85,10 +85,10 @@ class BaseOrder(object):
         pass
 
     def __repr__(self):
-        return f"Объект заказа {self.ref_id}"
+        return f"Заказ № {self.ref_id}"
 
 
-class BaseDish(object):
+class BaseDish(Recipy):
     """Этот класс представляет собой шаблон блюда в заказе."""
     DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
 
@@ -108,6 +108,8 @@ class BaseDish(object):
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         # self.pickup_point_unit: int
         # self.plan_duration = sum([self.dough.dough_plan_duration, self.sauce.sauce_plan_duration])
+
+        super().__init__()
 
     def halfstuff_cell_evaluation(self):
         """Эта группа фнукций запускает процедуру назначения пф и назначает ячейку для каждого пф."""
@@ -141,8 +143,9 @@ class BaseDough(BasePizzaPart):
 
     def __init__(self, dough_data):
         self.halfstuff_id = dough_data["id"]
-        self.halfstuff_cell = None
-        self.recipy_data = None
+        # self.halfstuff_cell хранит только место ячейки, при инициации None
+        self.halfstuff_cell = 21
+        self.recipe_data = dough_data["recipe"]
 
     def __repr__(self):
         return f"Тесто {self.halfstuff_id}"

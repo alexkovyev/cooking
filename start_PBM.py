@@ -38,10 +38,11 @@ async def cooking(today_orders):
         elif today_orders.orders_requested_for_delivery:
             await today_orders.dish_delivery()
 
-        elif today_orders.current_orders_proceed.keys():
+        elif today_orders.current_dishes_proceed.keys():
             print("Начнаем готовить")
-            _, current_dish = today_orders.current_orders_proceed.popitem()
+            _, current_dish = today_orders.current_dishes_proceed.popitem()
             print(current_dish)
+            await current_dish.start_dish_cooking()
 
         # elif today_orders.current_dishes_proceed.keys():
         #     print("Начинаем готовить")

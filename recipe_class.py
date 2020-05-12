@@ -10,15 +10,11 @@ from RBA import RBA
 class GetDough(object):
     """This class represents what should be done to take a vane from oven and get a dough to cut station"""
 
-    def __init__(self):
-        self.dough_plan_duration = 300
-
-    async def move_to_oven(self, chain_time, oven_id):
-        """Эта функция описывает движение до назнаечнной печи. Исполнитель - RBA."""
-
+    async def move_to_oven(self):
+        """Эта функция описывает движение до назначенной печи. Исполнитель - RBA."""
 
         print("Доступ к параметрам есть", self.dough.halfstuff_cell)
-        result = await RBA.move_to_oven(oven_id)
+        result = await RBA.move_to_oven(self)
         if result:
             print("RBA успешно подъехал к печи")
             await self.set_position_by_oven()
@@ -128,13 +124,13 @@ class GetDough(object):
             print("Не успешно освободии захват")
 
     async def get_dough(self):
-        print("Начинается chain", self.id)
+        print("Начинается chain")
         await self.move_to_oven()
 
-        print(f"Chain {self.id} is over")
+        print(f"Chain возьми тесто заказа is over")
 
 
-class GetSauce(Movement):
+class GetSauce(object):
     """В этом классе описаны действия по добавлению соуса. """
 
     def __init__(self):
@@ -151,7 +147,7 @@ class GetSauce(Movement):
             print("Не успешно полили соусом")
 
 
-class Filling(Movement):
+class Filling(object):
     """В этом классе собираются данные о том, как готовить начинку"""
 
     async def change_capture(self):
@@ -174,18 +170,21 @@ class Recipy(GetDough, GetSauce):
         self.recipy_list = [self.get_dough, self.get_sauce, self.get_dough, self.get_sauce]
         # self.plan_duration = sum([self.dough_plan_duration, self.sauce_plan_duration])
 
-    async def start_dish_cooking(self, today_orders):
+    async def start_dish_cooking(self):
         for chain in self.recipy_list:
-            if not today_orders.is_cooking_paused or today_orders.orders_requested_for_delivery:
-                print("Начинается 1 чейн")
-                print(self.plan_duration)
-                result = await chain()
-                if not result:
-                    break
-            if today_orders.is_pause_cooking:
-                await today_orders.cooking_pause_handler()
-            elif today_orders.orders_requested_for_delivery:
-                await today_orders.dish_delivery()
+            print("Начинается 1 чейн")
+            result = await chain()
+            if not result:
+                break
+            # if not today_orders.is_cooking_paused or today_orders.orders_requested_for_delivery:
+            #     print("Начинается 1 чейн")
+            #     result = await chain()
+            #     if not result:
+            #         break
+            # if today_orders.is_pause_cooking:
+            #     await today_orders.cooking_pause_handler()
+            # elif today_orders.orders_requested_for_delivery:
+            #     await today_orders.dish_delivery()
 
     #
     # async def get_dough_st(self):

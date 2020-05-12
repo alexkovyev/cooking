@@ -14,7 +14,6 @@ class PizzaBotMain(object):
 
     def __init__(self, equipment_data, recipes):
         self.equipment = Equipment(equipment_data)
-        # super().__init__(equipment_data)
         self.is_cooking_paused = False
         # все заказы за текущий сеанс работы, {id: BaseOrder}
         self.current_orders_proceed = {}
@@ -37,11 +36,11 @@ class PizzaBotMain(object):
                          {"dough": {"id":2},
                           "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
                          "filling": {"id": 1, "content": ((6, 1), (4, 1), (6, 1), (9, 2))},
-                         "additive_id":{"id": 7}},
+                         "additive":{"id": 7}},
                          {"dough": {"id":1},
                           "sauce": {"id": 3, "content": ((1, 5), (2, 25))},
                          "filling": {"id": 4, "content": ((6, 1), (4, 1), (6, 1), (9, 2))},
-                         "additive_id":{"id": 1}},
+                         "additive":{"id": 1}},
                      ]
                      }
         """
@@ -50,14 +49,23 @@ class PizzaBotMain(object):
                          {"dough": {"id":2},
                           "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
                          "filling": {"id": 1, "content": ((6, 1), (4, 1), (6, 1), (9, 2))},
-                         "additive_id":{"id": 7}},
+                         "additive":{"id": 7}},
                          {"dough": {"id":1},
                           "sauce": {"id": 3, "content": ((1, 5), (2, 25))},
                          "filling": {"id": 4, "content": ((6, 1), (4, 1), (6, 1), (9, 2))},
-                         "additive_id":{"id": 1}},
+                         "additive":{"id": 1}},
                      ]
                      }
         return new_order
+
+    def get_recipe_data(self, new_order):
+        """Этот метод добавляет в данные о блюде параметры чейнов рецепта для конкретного ингредиента"""
+        for dish in new_order["dishes"]:
+            dish["dough"]["recipe"] = self.recipes["dough"]
+            dish["sauce"]["recipe"] = self.recipes["sauce"]
+            dish["filling"]["recipe"] = self.recipes["filling"]
+            dish["additive"]["recipe"] = self.recipes["additive"]
+            print("В блюдо добавили рецепт")
 
     def create_new_order(self, new_order):
         """Этот метод создает экземпляр класса Order и заносит его в словарь self.current_orders_proceed
@@ -86,12 +94,6 @@ class PizzaBotMain(object):
 
         for dish in order.dishes:
             self.current_dishes_proceed[dish.id] = dish
-
-    def get_dish_recipe(self):
-
-        pass
-
-
     #
     # def total_cooking_update(self):
     #     pass

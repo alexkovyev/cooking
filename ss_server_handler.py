@@ -30,7 +30,9 @@ async def new_order_handler(request):
         if is_it_new_order:
             # data.current_orders_proceed[request_body["refid"]] = "Новый супер заказ"
             order_content = await data.get_order_content_from_db(new_order_id)
-            print(order_content)
+            print("Состав заказа", order_content)
+            data.get_recipe_data(order_content)
+            print("С рецептом", order_content)
             data.create_new_order(order_content)
             return web.Response(text="новый заказ принят")
 
