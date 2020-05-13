@@ -7,8 +7,14 @@ from RBA import RBA
 # import Controllers
 
 
-class GetDough(object):
+class ConfigMixin(object):
+    CUT_STATION_ID = 1
+
+class GetDough(ConfigMixin):
     """This class represents what should be done to take a vane from oven and get a dough to cut station"""
+
+    def __init__(self):
+        super().__init__()
 
     async def move_to_oven(self):
         """Эта функция описывает движение до назначенной печи. Исполнитель - RBA."""
@@ -16,10 +22,10 @@ class GetDough(object):
 
         CHAIN_ID = 1
 
-        time = self.dough.recipe_data[CHAIN_ID]
+        duration = self.dough.recipe_data[CHAIN_ID]
         destination = self.oven_unit
-        print(time, destination)
-        result = await RBA.move_time(time, destination)
+        print(duration, destination)
+        result = await RBA.move_time(duration, destination)
         if result:
             print("RBA успешно подъехал к печи")
             await self.set_position_by_oven()
@@ -30,9 +36,9 @@ class GetDough(object):
         """Этот метод отдает команду позиционирования перед печью """
         CHAIN_ID = 2
 
-        time = self.dough.recipe_data[CHAIN_ID]
+        duration = self.dough.recipe_data[CHAIN_ID]
         print("начинаю set_position_by_oven")
-        result = await RBA.set_position(time)
+        result = await RBA.set_position(duration)
         if result:
             print("спозиционировались перед печью")
             await self.get_vane()
@@ -43,9 +49,9 @@ class GetDough(object):
         """Тут описывается движение возьми лопатку. """
         CHAIN_ID = 3
 
-        time = self.dough.recipe_data[CHAIN_ID]
+        duration = self.dough.recipe_data[CHAIN_ID]
         print("начинаю get_vane")
-        result = await RBA.get_vane(time)
+        result = await RBA.get_vane(duration)
         if result:
             print("get_vane is done")
             await self.get_out_the_oven()
@@ -55,10 +61,10 @@ class GetDough(object):
     async def get_out_the_oven(self):
         """Тут описывается выезд из печи"""
         CHAIN_ID = 4
-        time = self.dough.recipe_data[CHAIN_ID]
-        destination = 0
-        print("get_out_the_oven", time.time())
-        result = await RBA.move_time(time, destination)
+        duration = self.dough.recipe_data[CHAIN_ID]
+
+        print("get_out_the_oven")
+        result = await RBA.get_out_the_oven(duration)
         if result:
             print("get_out_the_oven")
             await self.move_to_dough_station()
@@ -67,8 +73,11 @@ class GetDough(object):
 
     async def move_to_dough_station(self):
         """Запускает движение к станции теста"""
-        print("поехали к станции теста", time.time())
-        result = await self.movement()
+        CHAIN_ID = 5
+        duration = self.dough.recipe_data[CHAIN_ID]
+        destination = self.CUT_STATION_ID
+        print("поехали к станции теста")
+        result = await RBA.move_time(duration, destination)
         if result:
             print("приехали к станции теста")
             await self.controllers_get_dough()

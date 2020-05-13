@@ -16,22 +16,30 @@ class Movement():
 class RBA(Movement):
 
     @classmethod
-    async def move_time(clx, time, destination):
+    async def move_time(clx, duration, destination):
         # в качестве destination указываем конечный пункт назначения, текущее положение 'запоминает' RA
-        print("RBA двигается к печи", destination, "Время движения", time)
-        result = await clx.movement(time)
+        print("RBA двигается к печи", destination, "Время движения", duration)
+        result = await clx.movement(duration)
         return result
 
     @classmethod
-    async def set_position(cls, time):
+    async def set_position(cls, duration):
         print("Начинается позиционирование")
-        result = await cls.movement(time)
+        result = await cls.movement(duration)
         return result
 
     @classmethod
-    async def get_vane(cls, time):
+    async def get_vane(cls, duration):
         # нужно ли указывать тип захвата?
         print("Примагничиваем захват")
-        result = await cls.movement(time)
+        result = await cls.movement(duration)
+        return result
+
+    @classmethod
+    async def get_out_the_oven(cls, duration):
+        # нужна ли эта команда или это часть общей? Поездка на станцию нарезки отдельно.
+        # Какие парамеры кроме времени?
+        print("Выезжаем из печи")
+        result = await cls.movement(duration)
         return result
 
