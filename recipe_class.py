@@ -12,9 +12,14 @@ class GetDough(object):
 
     async def move_to_oven(self):
         """Эта функция описывает движение до назначенной печи. Исполнитель - RBA."""
+        # добавить изменение статуса блюда
 
-        print("Доступ к параметрам есть", self.dough.halfstuff_cell)
-        result = await RBA.move_to_oven(self)
+        CHAIN_ID = 1
+
+        time = self.dough.recipe_data[CHAIN_ID]
+        destination = self.oven_unit
+        print(time, destination)
+        result = await RBA.move_time(time, destination)
         if result:
             print("RBA успешно подъехал к печи")
             await self.set_position_by_oven()
@@ -23,8 +28,11 @@ class GetDough(object):
 
     async def set_position_by_oven(self):
         """Этот метод отдает команду позиционирования перед печью """
-        print("начинаю set_position_by_oven", time.time())
-        result = await self.movement()
+        CHAIN_ID = 2
+
+        time = self.dough.recipe_data[CHAIN_ID]
+        print("начинаю set_position_by_oven")
+        result = await RBA.set_position(time)
         if result:
             print("спозиционировались перед печью")
             await self.get_vane()
@@ -33,8 +41,11 @@ class GetDough(object):
 
     async def get_vane(self):
         """Тут описывается движение возьми лопатку. """
-        print("начинаю get_vane", time.time())
-        result = await self.movement()
+        CHAIN_ID = 3
+
+        time = self.dough.recipe_data[CHAIN_ID]
+        print("начинаю get_vane")
+        result = await RBA.get_vane(time)
         if result:
             print("get_vane is done")
             await self.get_out_the_oven()
@@ -42,9 +53,12 @@ class GetDough(object):
             print("Ошибка при взятии лопатки")
 
     async def get_out_the_oven(self):
-        """Тут описывается выезд из печи. Нужно ли делать отдельную команду?"""
+        """Тут описывается выезд из печи"""
+        CHAIN_ID = 4
+        time = self.dough.recipe_data[CHAIN_ID]
+        destination = 0
         print("get_out_the_oven", time.time())
-        result = await self.movement()
+        result = await RBA.move_time(time, destination)
         if result:
             print("get_out_the_oven")
             await self.move_to_dough_station()

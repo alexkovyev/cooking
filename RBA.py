@@ -4,8 +4,8 @@ import random
 
 class Movement():
 
-    async def movement(self):
-        n = random.randint(1, 10)
+    @staticmethod
+    async def movement(n, *args):
         print("Запустилась работа робота")
         await asyncio.sleep(n)
         result = random.choice([True, True, False])
@@ -15,5 +15,23 @@ class Movement():
 
 class RBA(Movement):
 
-    async def move_to_oven(self):
-        print("RBA двигается к печи")
+    @classmethod
+    async def move_time(clx, time, destination):
+        # в качестве destination указываем конечный пункт назначения, текущее положение 'запоминает' RA
+        print("RBA двигается к печи", destination, "Время движения", time)
+        result = await clx.movement(time)
+        return result
+
+    @classmethod
+    async def set_position(cls, time):
+        print("Начинается позиционирование")
+        result = await cls.movement(time)
+        return result
+
+    @classmethod
+    async def get_vane(cls, time):
+        # нужно ли указывать тип захвата?
+        print("Примагничиваем захват")
+        result = await cls.movement(time)
+        return result
+
