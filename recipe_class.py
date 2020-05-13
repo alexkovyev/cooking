@@ -4,7 +4,7 @@ import time
 import random
 
 from RBA import RBA
-# import Controllers
+from controllers import Controllers
 
 
 class ConfigMixin(object):
@@ -80,21 +80,22 @@ class GetDough(ConfigMixin):
         result = await RBA.move_time(duration, destination)
         if result:
             print("приехали к станции теста")
+            # Нужно ли тут запустить паралельно танец? так как у RA простой пока тесто выдается
             await self.controllers_get_dough()
         else:
             print("ошибка подъезда на станцию теста")
 
     async def controllers_get_dough(self):
         """отдает команду контролеру получить тесто"""
-        # Controllers.give_dough(halfstuff_cell)
-        # запускает функцию списать п\ф
-        print("берем тесто", time.time())
-        result = await self.movement()
+        print("берем тесто")
+        dough_point = self.dough.halfstuff_cell
+        result = await Controllers.give_dough(dough_point)
         if result:
             print("взяли тесто")
             await self.control_dough_position()
         else:
             print("Ошибка получения теста")
+        # запускает функцию списать п\ф
 
     async def control_dough_position(self):
         """отдаем команду на поправление теста"""

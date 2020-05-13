@@ -2,7 +2,7 @@ import asyncio
 import random
 
 
-class Movement():
+class Movement(object):
 
     @staticmethod
     async def movement(n, *args):
