@@ -13,12 +13,16 @@ dough = {1: 10,
 # sauce chain_id: plan_time (const)
 sauce = {1: 20}
 
-# filling filling_id: {dough_id_1:{}
-#                      dough_id_2:{}             }
+# filling -> {filling_id: {filling}
+#                         dough_id_2:{filling}
+#                         }
+
+#heating_program \ cooking_program -> {dough_id :(heating_program_id : duration)}
 filling = {1: {"chain": {},
-              "cooking_prorgamm": {1: 1, 2: 1, 3: 1, 4: 2}
-              }
+               "cooking_program": {1: (1, 180), 2: (2, 180), 3: (1, 180), 4: (1, 180)},
+               "heating_program": {1: (1, 20), 2: (2, 20), 3: (1, 25), 4: (1, 37)},
           }
+           }
 
 filling_chain = []
 

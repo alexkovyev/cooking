@@ -9,6 +9,10 @@ from controllers import Controllers
 
 class ConfigMixin(object):
     CUT_STATION_ID = 1
+    CAPTURE_STATION = 2
+    MOVE_TO_CAPTURE_STATION_TIME = 5
+    CHANGE_CAPTURE_TIME = 2
+    PRODUCT_CAPTURE_ID = 1
 
 class GetDough(ConfigMixin):
     """This class represents what should be done to take a vane from oven and get a dough to cut station"""
@@ -205,22 +209,67 @@ class GetSauce(object):
             print("Не успешно полили соусом")
 
 
-class Filling(object):
+class Capture(ConfigMixin):
     """В этом классе собираются данные о том, как готовить каждый ингредиент начинки"""
 
     async def move_to_capture_station(self):
-        """Едем до места захвата"""
+        """Едем до места хранения захватов"""
+        print("Поехали к месту хранения захватов")
+        CHAIN_ID = 1
+
+        duration = self.MOVE_TO_CAPTURE_STATION_TIME
+        destination = self.CAPTURE_STATION
+
+        result = await RBA.move_to_position(destination, duration)
+        if result:
+            print("RA успешно подъехал к станции захватов")
+            await self.change_capture()
+        else:
+            print("Ошибка подъезда к станции захватов")
+
 
     async def change_capture(self):
         """Меняем захват на тот, которым нужно брать п\ф. ВОПРОС: зависит ли захват от типа п\ф"""
-        pass
+        print("Берем захват для продукта")
+        CHAIN_ID = 2
+
+        launch_params = {"atomic_name": "change_capture",
+                         "capture_type": self.PRODUCT_CAPTURE_ID,
+                         "duration": self.CHANGE_CAPTURE_TIME}
+
+        result = await RBA.atomic(** launch_params)
+        if result:
+            print("RA успешно подъехал к станции захватов")
+            await self.get_vane_from_oven()
+        else:
+            print("Ошибка подъезда")
+
+    async def get_product_capture(self):
+        """Это метод аккумулятор для запуска ВОЗЬМИ захват """
+        print("Начинаем чейн возьми захват")
+        await self.move_to_capture_station()
+        print("Чейн возьми захват закончилися")
+
+
+class Filling(ConfigMixin):
 
     async def go_to_fridge(self):
-        """Едем от точки Х к холодильнику"""
-        pass
+        """Едем к холодильнику за продуктом"""
+        print("Поехали к холодильнику за продуктом")
+        CHAIN_ID = 1
 
-    async def set_position_by_fridge(self):
-        "Позиционирование напротив холодильника"
+        duration = self.MOVE_TO_CAPTURE_STATION_TIME
+        destination = self.CAPTURE_STATION
+
+        result = await RBA.move_to_position(destination, duration)
+        if result:
+            print("RA успешно подъехал к станции захватов")
+            await self.change_capture()
+        else:
+            print("Ошибка подъезда к станции захватов")
+
+    async def get_product_from_fridge(self):
+        """Группа действий по доставанию продукта из холодильника """
         pass
 
 
