@@ -18,66 +18,40 @@ class GetDough(ConfigMixin):
 
     async def move_to_oven(self):
         """Эта функция описывает движение до назначенной печи. Исполнитель - RBA."""
-        # добавить изменение статуса блюда
 
         CHAIN_ID = 1
 
         duration = self.dough.recipe_data[CHAIN_ID]
         destination = self.oven_unit
-        print(duration, destination)
-        result = await RBA.move_time(duration, destination)
+        result = await RBA.move_to_position(destination, duration)
         if result:
             print("RBA успешно подъехал к печи")
-            await self.set_position_by_oven()
+            await self.get_vane_from_oven()
         else:
             print("Ошибка подъезда")
 
-    async def set_position_by_oven(self):
-        """Этот метод отдает команду позиционирования перед печью """
+
+    async def get_vane_from_oven(self):
+        """Этот метод запускает группу атомарных действий RA по захвату лопатки из печи"""
         CHAIN_ID = 2
 
-        duration = self.dough.recipe_data[CHAIN_ID]
-        print("начинаю set_position_by_oven")
-        result = await RBA.set_position(duration)
+        launch_params = {"atomic_name": "get_vane_from_oven",
+                         "duration": self.dough.recipe_data[CHAIN_ID]}
+
+        result = await RBA.atomic(**launch_params)
         if result:
-            print("спозиционировались перед печью")
-            await self.get_vane()
-        else:
-            print("Ошибка позиционирования")
-
-    async def get_vane(self):
-        """Тут описывается движение возьми лопатку. """
-        CHAIN_ID = 3
-
-        duration = self.dough.recipe_data[CHAIN_ID]
-        print("начинаю get_vane")
-        result = await RBA.get_vane(duration)
-        if result:
-            print("get_vane is done")
-            await self.get_out_the_oven()
-        else:
-            print("Ошибка при взятии лопатки")
-
-    async def get_out_the_oven(self):
-        """Тут описывается выезд из печи"""
-        CHAIN_ID = 4
-        duration = self.dough.recipe_data[CHAIN_ID]
-
-        print("get_out_the_oven")
-        result = await RBA.get_out_the_oven(duration)
-        if result:
-            print("get_out_the_oven")
+            print("RBA успешно подъехал к печи")
             await self.move_to_dough_station()
         else:
-            print("Выехали из печи с лопаткой")
+            print("Ошибка подъезда")
 
     async def move_to_dough_station(self):
         """Запускает движение к станции теста"""
-        CHAIN_ID = 5
+        CHAIN_ID = 3
         duration = self.dough.recipe_data[CHAIN_ID]
-        destination = self.CUT_STATION_ID
+        destination = self.dough.halfstuff_cell
         print("поехали к станции теста")
-        result = await RBA.move_time(duration, destination)
+        result = await RBA.move_to_position(destination, duration)
         if result:
             print("приехали к станции теста")
             # Нужно ли тут запустить паралельно танец? так как у RA простой пока тесто выдается
@@ -87,6 +61,8 @@ class GetDough(ConfigMixin):
 
     async def controllers_get_dough(self):
         """отдает команду контролеру получить тесто"""
+        CHAIN_ID = 4
+
         print("берем тесто")
         dough_point = self.dough.halfstuff_cell
         result = await Controllers.give_dough(dough_point)
@@ -95,12 +71,16 @@ class GetDough(ConfigMixin):
             await self.control_dough_position()
         else:
             print("Ошибка получения теста")
-        # запускает функцию списать п\ф
+        # запускает метод списать п\ф
 
     async def control_dough_position(self):
         """отдаем команду на поправление теста"""
-        print("поправляем тесто", time.time())
-        result = await self.movement()
+        print("поправляем тесто")
+        CHAIN_ID = 5
+
+        launch_params = {"atomic_name": "control_dough_position",
+                         "duration": self.dough.recipe_data[CHAIN_ID]}
+        result = await RBA.atomic(**launch_params)
         if result:
             print("успешно поправили тесто")
             await self.move_to_cut_station()
@@ -109,70 +89,127 @@ class GetDough(ConfigMixin):
 
     async def move_to_cut_station(self):
         """отдает команду на движение от станции теста на станцию нарезки"""
-        print("едем к станции нарезки", time.time())
-        result = await self.movement()
+        print("едем к станции нарезки")
+        CHAIN_ID = 6
+
+        duration = self.dough.recipe_data[CHAIN_ID]
+        destination = self.CUT_STATION_ID
+
+        result = await RBA.move_to_position(destination, duration)
         if result:
             print("успешно доехали до станции нарезки")
             await self.set_position_by_cut_station()
         else:
             print("Не доехали до станции нарезки")
 
-    async def set_position_by_cut_station(self):
-        """типовая команда для нескольких классов"""
-        print("позиционируемся относительно станции нарезки", time.time())
-        result = await self.movement()
-        if result:
-            print("успешно спозиционировались относительно станции нарезки")
-            await self.get_into_cut_station()
-        else:
-            print("Не успешно спозиционировались относительно станции нарезки")
+    async def leave_vane_at_cut_station(self):
+        print("Отцепляем лопаатку на станции нарезки")
 
-    async def get_into_cut_station(self):
-        """Заезжаем в станцию нарезки"""
-        print("заезжаем в станцию нарезки", time.time())
-        result = await self.movement()
-        if result:
-            print("успешно заехали в станцию нарезки")
-            await self.free_capture()
-        else:
-            print("Не успешно заехали в станцию нарезки")
+        CHAIN_ID = 7
 
-    async def free_capture(self):
-        """Освободить захват"""
-        print("освобождаем захват", time.time())
-        result = await self.movement()
+        launch_params = {"atomic_name": "leave_vane_at_cut_station",
+                         "duration": self.dough.recipe_data[CHAIN_ID]}
+
+        result = await RBA.atomic(**launch_params)
         if result:
-            print("успешно освободили захват")
-            # await self.set_position_by_cut_station()
+            print("успешно лопатка в станции нарезки")
+            return True
         else:
-            print("Не успешно освободии захват")
+            print("Ошибка: лопатка не в станции нарезки")
 
     async def get_dough(self):
-        print("Начинается chain")
+        print("Начинается chain Возьми тесто")
         await self.move_to_oven()
-
         print(f"Chain возьми тесто заказа is over")
+
+    # async def set_position_by_oven(self):
+    #     """Этот метод отдает команду позиционирования перед печью """
+    #     CHAIN_ID = 2
+    #
+    #     duration = self.dough.recipe_data[CHAIN_ID]
+    #     print("начинаю set_position_by_oven")
+    #     result = await RBA.set_position(duration)
+    #     if result:
+    #         print("спозиционировались перед печью")
+    #         await self.get_vane()
+    #     else:
+    #         print("Ошибка позиционирования")
+    #
+    # async def get_vane(self):
+    #     """Тут описывается движение возьми лопатку. """
+    #     CHAIN_ID = 3
+    #
+    #     duration = self.dough.recipe_data[CHAIN_ID]
+    #     print("начинаю get_vane")
+    #     result = await RBA.get_vane(duration)
+    #     if result:
+    #         print("get_vane is done")
+    #         await self.get_out_the_oven()
+    #     else:
+    #         print("Ошибка при взятии лопатки")
+    #
+    # async def get_out_the_oven(self):
+    #     """Тут описывается выезд из печи"""
+    #     CHAIN_ID = 4
+    #     duration = self.dough.recipe_data[CHAIN_ID]
+    #
+    #     print("get_out_the_oven")
+    #     result = await RBA.get_out_the_oven(duration)
+    #     if result:
+    #         print("get_out_the_oven")
+    #         await self.move_to_dough_station()
+    #     else:
+    #         print("Выехали из печи с лопаткой")
+    #
+    # async def set_position_by_cut_station(self):
+    #     """типовая команда для нескольких классов"""
+    #     print("позиционируемся относительно станции нарезки", time.time())
+    #     result = await self.movement()
+    #     if result:
+    #         print("успешно спозиционировались относительно станции нарезки")
+    #         await self.get_into_cut_station()
+    #     else:
+    #         print("Не успешно спозиционировались относительно станции нарезки")
+    #
+    # async def get_into_cut_station(self):
+    #     """Заезжаем в станцию нарезки"""
+    #     print("заезжаем в станцию нарезки", time.time())
+    #     result = await self.movement()
+    #     if result:
+    #         print("успешно заехали в станцию нарезки")
+    #         await self.free_capture()
+    #     else:
+    #         print("Не успешно заехали в станцию нарезки")
+    #
+    # async def free_capture(self):
+    #     """Освободить захват"""
+    #     print("освобождаем захват", time.time())
+    #     result = await self.movement()
+    #     if result:
+    #         print("успешно освободили захват")
+    #         # await self.set_position_by_cut_station()
+    #     else:
+    #         print("Не успешно освободии захват")
 
 
 class GetSauce(object):
     """В этом классе описаны действия по добавлению соуса. """
 
-    def __init__(self):
-        self.sauce_plan_duration = 100
-
     async def get_sauce(self):
-        # Controllers.sauce()
-        print("Начинаем чейн соус", time.time())
-        result = await self.movement()
+        print("Начинаем поливать соусом")
+        sauce_content = self.sauce.sauce_cell
+        result = await Controllers.give_sauce(sauce_content)
         if result:
             print("успешно полили соусом")
-            # await self.set_position_by_cut_station()
         else:
             print("Не успешно полили соусом")
 
 
 class Filling(object):
-    """В этом классе собираются данные о том, как готовить начинку"""
+    """В этом классе собираются данные о том, как готовить каждый ингредиент начинки"""
+
+    async def move_to_capture_station(self):
+        """Едем до места захвата"""
 
     async def change_capture(self):
         """Меняем захват на тот, которым нужно брать п\ф. ВОПРОС: зависит ли захват от типа п\ф"""
