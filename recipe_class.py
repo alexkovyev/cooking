@@ -288,7 +288,24 @@ class Filling(ConfigMixin):
         result = await Controllers.cut_the_product(cutting_program)
 
 
+class Baking(ConfigMixin):
+    """Этот класс выполняет действия по разогреву, доставки товаров до выпекания, выпекание"""
 
+    async def get_vane_from_cut_station(self):
+        """Это группа атомарных действий по получению лопатки из станции нарезки"""
+        CHAIN_ID = 1
+
+        print("Отправляем команду примагнить лопатку в станции нарезки")
+
+    async def turn_oven_heating_on(self):
+        """Этот метод запускает прогрев печи"""
+
+        print("Включаем прогрев печи")
+        result = await Controllers.turn_oven_heating_on(self.oven_unit)
+        if result:
+            print("разогрев успешно включился")
+        else:
+            print("Ошибка печи")
 
 
 
