@@ -58,7 +58,6 @@ class GetDough(ConfigMixin):
         result = await RBA.move_to_position(destination, duration)
         if result:
             print("приехали к станции теста")
-            # Нужно ли тут запустить паралельно танец? так как у RA простой пока тесто выдается
             await self.controllers_get_dough()
         else:
             print("ошибка подъезда на станцию теста")
@@ -270,7 +269,27 @@ class Filling(ConfigMixin):
 
     async def get_product_from_fridge(self):
         """Группа действий по доставанию продукта из холодильника """
+        CHAIN_ID = 2
+        print("берем продукт из холодильника")
         pass
+
+    async def go_to_cut_station(self):
+        CHAIN_ID = 4
+        pass
+
+    async def put_product_into_cut_station(self):
+        CHAIN_ID = 5
+        pass
+
+    async def cut_the_product(self, duration, cutting_program):
+        """Нарезка продукта"""
+        CHAIN_ID = 6
+        print("запустили команду нарежь продукт")
+        result = await Controllers.cut_the_product(cutting_program)
+
+
+
+
 
 
 class Recipy(GetDough, GetSauce):

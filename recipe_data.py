@@ -11,6 +11,7 @@ dough = {1: 10,
          }
 
 # sauce chain_id: plan_time (const)
+# ДОБАВИТЬ способ поливки соуса
 sauce = {1: 20}
 
 # filling -> {filling_id: {filling}
@@ -19,6 +20,12 @@ sauce = {1: 20}
 
 #heating_program \ cooking_program -> {dough_id :(heating_program_id : duration)}
 filling = {1: {"chain": {},
+               "cutting_program": ({"program_id": 2, "duration": 10},
+                                   {"program_id": 1, "duration": 12},
+                                   {"program_id": 5, "duration": 15},
+                                   {"program_id": 8, "duration": 8},
+                                   {"program_id": 4, "duration": 17},
+                                   {"program_id": 9, "duration": 9}),
                "cooking_program": {1: (1, 180), 2: (2, 180), 3: (1, 180), 4: (1, 180)},
                "heating_program": {1: (1, 20), 2: (2, 20), 3: (1, 25), 4: (1, 37)},
           }
