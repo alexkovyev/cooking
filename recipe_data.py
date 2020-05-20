@@ -10,9 +10,28 @@ dough = {1: 10,
          7: 2,
          }
 
-# sauce chain_id: plan_time (const)
-# ДОБАВИТЬ способ поливки соуса
-sauce = {1: 20}
+# sauce sauce_id:{}
+sauce = {2: {"duration": 20,
+                "content": {
+                    1: {"program": 1,
+                       "sauce_station": None,
+                        "qt": None,
+                       },
+                    2: {"program": 3,
+                       "sauce_station": None,
+                        "qt": None,
+                       }
+                }
+                },
+             3: {"duration": 20,
+                "content": {
+                    5: {"program": 7,
+                       "sauce_station": None,
+                        "qt": None,
+                       },
+                }
+                }
+             }
 
 # filling -> {filling_id: {filling}
 #                         dough_id_2:{filling}

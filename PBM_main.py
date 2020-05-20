@@ -51,7 +51,7 @@ class PizzaBotMain(object):
                          "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
                          "additive":{"id": 7}},
                          {"dough": {"id":1},
-                          "sauce": {"id": 3, "content": ((1, 5), (2, 25))},
+                          "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
                          "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
                          "additive":{"id": 1}},
                      ]
@@ -64,7 +64,14 @@ class PizzaBotMain(object):
         {'refid': 65, 'dishes': [
         {'dough': {'id': 2, 'recipe': {1: 10, 2: 5, 3: 10, 4: 10, 5: 12, 6: 7, 7: 2}},
 
-        'sauce': {'id': 2, 'content': ((1, 5), (2, 25)), 'recipe': {1: 20}},
+        'sauce': {'id': 2,
+                 'content': ((1, 5), (2, 25)),
+                'recipe':
+                        {'duration': 20,
+                        'content': {1:
+                                     {'program': 1, 'sauce_station': None, 'qt': 5},
+                                    2:
+                                      {'program': 3, 'sauce_station': None, 'qt': 25}}}},
 
         'filling': {'id': 1,
         'content': ((6, {'program_id': 2, 'duration': 10}), (2, {'program_id': 1, 'duration': 12}),
@@ -76,7 +83,14 @@ class PizzaBotMain(object):
 
         {'dough': {'id': 1, 'recipe': {1: 10, 2: 5, 3: 10, 4: 10, 5: 12, 6: 7, 7: 2}},
 
-        'sauce': {'id': 3, 'content': ((1, 5), (2, 25)), 'recipe': {1: 20}},
+        'sauce': {'id': 2,
+                 'content': ((1, 5), (2, 25)),
+                'recipe':
+                        {'duration': 20,
+                        'content': {1:
+                                     {'program': 1, 'sauce_station': None, 'qt': 5},
+                                    2:
+                                      {'program': 3, 'sauce_station': None, 'qt': 25}}}},
         'filling': {'id': 1, 'content': ((6, {'program_id': 2, 'duration': 10}),
         (2, {'program_id': 1, 'duration': 12}), (3, {'program_id': 5, 'duration': 15}),
         (3, {'program_id': 8, 'duration': 8}), (6, {'program_id': 4, 'duration': 17}),
@@ -84,23 +98,33 @@ class PizzaBotMain(object):
         'cooking_program': (1, 180), 'heating_program': (1, 20), 'chain': {}},
 
         'additive': {'id': 1, 'recipe': {1: 5}}}]}
+
+        'sauce': {'id': 2, 'content': ((1, 5), (2, 25)), 'recipe': {'duration': 20, 'content': {1: {'program': 1, 'sauce_station': None, 'qt': 5}, 2: {'program': 3, 'sauce_station': None, 'qt': 25}}}}, 'filling': {'id': 1, 'content': ((6, {'program_id': 2, 'duration': 10}), (2, {'program_id': 1, 'duration': 12}), (3, {'program_id': 5, 'duration': 15}), (3, {'program_id': 8, 'duration': 8}), (6, {'program_id': 4, 'duration': 17}), (8, {'program_id': 9, 'duration': 9})), 'cooking_program': (2, 180), 'heating_program': (2, 20), 'chain': {}}, 'additive': {'id': 7, 'recipe': {1: 5}}}, {'dough': {'id': 1, 'recipe': {1: 10, 2: 5, 3: 10, 4: 10, 5: 12, 6: 7, 7: 2}}, 'sauce': {'id': 2, 'content': ((1, 5), (2, 25)), 'recipe': {'duration': 20, 'content': {1: {'program': 1, 'sauce_station': None, 'qt': 5}, 2: {'program': 3, 'sauce_station': None, 'qt': 25}}}}, 'filling': {'id': 1, 'content': ((6, {'program_id': 2, 'duration': 10}), (2, {'program_id': 1, 'duration': 12}), (3, {'program_id': 5, 'duration': 15}), (3, {'program_id': 8, 'duration': 8}), (6, {'program_id': 4, 'duration': 17}), (8, {'program_id': 9, 'duration': 9})), 'cooking_program': (1, 180), 'heating_program': (1, 20), 'chain': {}}, 'additive': {'id': 1, 'recipe': {1: 5}}}]}
+
 """
+        def create_sauce_recipe(self, dish):
+            sauce_id = dish["sauce"]["id"]
+            dish["sauce"]["recipe"] = self.recipes["sauce"][sauce_id]
+            for component, my_tuple in zip(dish["sauce"]["recipe"]["content"], dish["sauce"]["content"]):
+                dish["sauce"]["recipe"]["content"][component]["qt"] = my_tuple[1]
+            print("составили рецепт соуса", dish["sauce"])
+
 
         def create_filling_recipe(self, dish):
-            dish_id = dish["filling"]["id"]
+            filling_id = dish["filling"]["id"]
             dough_id = dish["dough"]["id"]
-            dish["filling"]["cooking_program"] = self.recipes["filling"][dish_id]["cooking_program"][dough_id]
-            dish["filling"]["heating_program"] = self.recipes["filling"][dish_id]["heating_program"][dough_id]
-            dish["filling"]["chain"] = self.recipes["filling"][dish_id]["chain"]
+            dish["filling"]["cooking_program"] = self.recipes["filling"][filling_id]["cooking_program"][dough_id]
+            dish["filling"]["heating_program"] = self.recipes["filling"][filling_id]["heating_program"][dough_id]
+            dish["filling"]["chain"] = self.recipes["filling"][filling_id]["chain"]
             halfstaff_content = dish["filling"]["content"]
-            cutting_program = self.recipes["filling"][dish_id]["cutting_program"]
+            cutting_program = self.recipes["filling"][filling_id]["cutting_program"]
             dish["filling"]["content"] = tuple(zip(halfstaff_content, cutting_program))
             print("Составили рецепт начинки", dish["filling"])
 
 
         for dish in new_order["dishes"]:
             dish["dough"]["recipe"] = self.recipes["dough"]
-            dish["sauce"]["recipe"] = self.recipes["sauce"]
+            create_sauce_recipe(self, dish)
             create_filling_recipe(self, dish)
             dish["additive"]["recipe"] = self.recipes["additive"]
             print("В блюдо добавили рецепт")

@@ -158,7 +158,19 @@ class BaseSauce(BasePizzaPart):
         self.sauce_id = sauce_data["id"]
         self.sauce_content = sauce_data["content"]
         # sauce_cell=[(1, 5), (2, 25)] 0 - id насосной станции, 1 - колво
-        self.sauce_cell = None
+        self.sauce_cell = self.unpack_data(sauce_data)
+        self.sauce_recipe = sauce_data["recipe"]
+
+    def unpack_data(self, sauce_data):
+        # переписать, временно
+        for_controllers = []
+        a = sauce_data["recipe"]["content"]
+        for i in a:
+            b = (a[i]["sauce_station"], a[i]["program"])
+            for_controllers.append(b)
+        print("успешно добавили инфу для контроллеров", for_controllers)
+        self.sauce_cell = for_controllers
+
 
     def __repr__(self):
         return f"Соус {self.sauce_id}"

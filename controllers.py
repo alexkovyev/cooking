@@ -86,6 +86,11 @@ class Controllers(Movement):
         return result
 
     @classmethod
+    async def evaluate_baking_time(cls):
+        """Метод определяет фактическое время, необходимое для выпечки с учетом загрузки печи"""
+        pass
+
+    @classmethod
     async def turn_oven_heating_on(cls, oven_id):
         """Алексей сказал, что время прогрева печи всегда одинаковое для любой программы и
         температура (режим) тоже"""
