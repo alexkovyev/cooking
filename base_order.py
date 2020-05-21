@@ -104,7 +104,10 @@ class BaseDish(Recipy):
         self.oven_unit = free_oven_id
         self.status = "received"
         # self.chain_list = [self.get_dough(self.id, self.oven_unit, 6)]
-        self.time_starting_baking = None
+        # (program_id, plan_duration) если плановая будет не нужна, удалить и исправить индексы контроллеров
+        self.baking_program = dish_data["filling"]["cooking_program"]
+        self.heating_program = dish_data["filling"]["heating_program"]
+        self.stop_baking_time = None
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         # self.pickup_point_unit: int
         # self.plan_duration = sum([self.dough.dough_plan_duration, self.sauce.sauce_plan_duration])
@@ -157,20 +160,18 @@ class BaseSauce(BasePizzaPart):
     def __init__(self, sauce_data):
         self.sauce_id = sauce_data["id"]
         self.sauce_content = sauce_data["content"]
-        # sauce_cell=[(1, 5), (2, 25)] 0 - id насосной станции, 1 - колво
+        # sauce_cell=[(1, 1), (2, 2)] 0 - id насосной станции, 1 - программа запуска
+        # переписать название
         self.sauce_cell = self.unpack_data(sauce_data)
         self.sauce_recipe = sauce_data["recipe"]
 
     def unpack_data(self, sauce_data):
+        """выводт данные в виде [(cell_id, program_id), (None, 3)]"""
         # переписать, временно
-        for_controllers = []
-        a = sauce_data["recipe"]["content"]
-        for i in a:
-            b = (a[i]["sauce_station"], a[i]["program"])
-            for_controllers.append(b)
-        print("успешно добавили инфу для контроллеров", for_controllers)
-        self.sauce_cell = for_controllers
 
+        a = sauce_data["recipe"]["content"]
+        for_controllers = [(a[i]["sauce_station"], a[i]["program"]) for i in a]
+        return for_controllers
 
     def __repr__(self):
         return f"Соус {self.sauce_id}"

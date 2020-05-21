@@ -8,7 +8,7 @@ class Movement(object):
     async def movement(n, *args):
         print("Запустилась работа робота")
         await asyncio.sleep(n)
-        result = random.choice([True, True, False])
+        result = random.choice([True, True, True])
         print("Работа робота завершена")
         return result
 

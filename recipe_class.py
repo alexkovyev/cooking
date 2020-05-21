@@ -101,7 +101,7 @@ class GetDough(ConfigMixin):
         result = await RBA.move_to_position(destination, duration)
         if result:
             print("успешно доехали до станции нарезки")
-            await self.set_position_by_cut_station()
+            await self.leave_vane_at_cut_station()
         else:
             print("Не доехали до станции нарезки")
 
@@ -200,8 +200,9 @@ class GetSauce(object):
 
     async def get_sauce(self):
         print("Начинаем поливать соусом")
-        sauce_content = self.sauce.sauce_cell
-        result = await Controllers.give_sauce(sauce_content)
+        recipe = self.sauce.sauce_cell
+        print("Данные об ячейке",recipe)
+        result = await Controllers.give_sauce(recipe)
         if result:
             print("успешно полили соусом")
         else:
@@ -307,6 +308,38 @@ class Baking(ConfigMixin):
         else:
             print("Ошибка печи")
 
+    async def move_to_oven(self):
+        """Движение от станции нарезки к печи"""
+        pass
+
+    async def put_vane_to_oven(self):
+        """Добавтим лопатку в печь"""
+        pass
+
+    async def evaluate_baking_time(self):
+        """Запускаем метод посчитай время выпечки
+        возвращает словарь {oven_id: unix_time} для всех печей, время которых изменилось (и запрошенной тоже)
+        """
+        print("вызываем расчет времени")
+        result = await Controllers.evaluate_baking_time(oven_unit=self.oven_unit,
+                                                        baking_program=self.baking_program[0])
+
+        return result
+
+    async def time_change_handler(self):
+        # как то запусть метод поменяй время во всех печах
+        pass
+
+    async def start_baking(self, result):
+        duration = result[self.oven_unit]
+        result = Controllers.start_baking(oven_unit=self.oven_unit,
+                                          baking_program=self.baking_program[0])
+
+    async def run_baking(self):
+        """Это группа методов запускает выпекание"""
+        time_changes = await self.evaluate_baking_time(self)
+        await self.time_change_handler(self, time_changes)
+        await self.start_baking(self, time_changes)
 
 
 class Recipy(GetDough, GetSauce):
@@ -318,10 +351,11 @@ class Recipy(GetDough, GetSauce):
 
     async def start_dish_cooking(self):
         for chain in self.recipy_list:
-            print("Начинается 1 чейн")
+            print("Начинается 1 чейн", chain)
             result = await chain()
-            if not result:
-                break
+            print("результат выполнения", result)
+            # if not result:
+            #     break
             # if not today_orders.is_cooking_paused or today_orders.orders_requested_for_delivery:
             #     print("Начинается 1 чейн")
             #     result = await chain()
