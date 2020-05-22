@@ -1,6 +1,8 @@
 """Этот модуль управляет заказами и блюдами"""
-import time
 import asyncio
+import time
+
+from collections import deque
 
 from base_order import BaseOrder
 from equipment import Equipment
@@ -19,8 +21,8 @@ class PizzaBotMain(object):
         self.current_orders_proceed = {}
         # все неприготовленые блюда
         self.current_dishes_proceed = {}
-        self.time_to_cook_all_dishes_left = 2300
-        self.orders_requested_for_delivery = {}
+        self.time_to_cook_all_dishes_left = 0
+        self.orders_requested_for_delivery = deque()
         self.recipes = recipes
 
     def checking_order_for_double(self, new_order_id):
@@ -145,7 +147,7 @@ class PizzaBotMain(object):
                 # если заказ создан успешно, помещаем его в словарь всех готовящихся заказов
                 self.current_orders_proceed[order.ref_id] = order
                 # перемещаем заказы в словарь всех готовящихся блюд
-                self.fill_current_dishes_proceed(order)
+                # self.fill_current_dishes_proceed(order)
         # придумать ошибки какие могут быть
         except ValueError:
             pass
@@ -156,7 +158,72 @@ class PizzaBotMain(object):
 
         for dish in order.dishes:
             self.current_dishes_proceed[dish.id] = dish
-    #
+
+    async def hello_from_qr_code(self):
+        print("QR код обработан", time.time())
+
+    async def hello_from_broken_oven(self):
+        print("Изменение статуса оборудования обработано", time.time())
+
+    async def controllers_alert_handler(self, cntrls_events):
+        """Эта курутина обрабатывает уведомления от контроллеров: отказ оборудования и qr код """
+
+        print("Переключились в контролеры", time.time())
+
+        async def wait_for_qr_code(cntrls_events):
+            event_name = "qr_scanned"
+            event = cntrls_events.get_dispatcher_event(event_name)
+            while True:
+                event_data = await event
+                qr_code_data = event_data[1]["params"]
+                print(qr_code_data)
+                await self.hello_from_qr_code()
+
+        async def wait_for_hardware_status_changed(cntrls_events):
+            event_name = "hardware_status_changed"
+            event = cntrls_events.get_dispatcher_event(event_name)
+            while True:
+                await event
+                await self.hello_from_broken_oven()
+
+        qr_event_waiter = asyncio.create_task(wait_for_qr_code(cntrls_events))
+        status_change_waiter = asyncio.create_task(wait_for_hardware_status_changed(cntrls_events))
+        await asyncio.gather(qr_event_waiter, status_change_waiter)
+
+    async def cooking(self):
+        """Эта курутина обеспеивает вызов методов по приготовлению блюд и другой важной работе"""
+
+        while True:
+            print("Работает cooking", time.time())
+            cooking_queue = deque()
+            print("В списке на выдачу", self.orders_requested_for_delivery)
+
+            if self.is_cooking_paused:
+                await self.cooking_pause_handler()
+                # print("Приостанавливаем работу")
+                # await asyncio.sleep(10)
+
+            elif self.orders_requested_for_delivery:
+                await self.dish_delivery()
+
+            elif self.current_dishes_proceed.keys():
+                print("Начнаем готовить")
+                _, current_dish = self.current_dishes_proceed.popitem()
+                print(current_dish)
+                await current_dish.start_dish_cooking()
+
+            # elif today_orders.current_dishes_proceed.keys():
+            #     print("Начинаем готовить")
+            #     _, current_dish = today_orders.current_dishes_proceed.popitem()
+            #     print(current_dish)
+            #     # await current_dish.start_dish_cooking(today_orders)
+
+            else:
+                print("Dancing 3 secs")
+                self.time_to_cook_all_dishes_left += 55
+                await asyncio.sleep(3)
+                print()
+
     # def total_cooking_update(self):
     #     pass
     #
