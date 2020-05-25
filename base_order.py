@@ -93,6 +93,7 @@ class BaseDish(Recipy):
     DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
 
     def __init__(self, dish_data, free_oven_id, index):
+        super().__init__()
         # создаем уникальное имя блюда
         self.id = f"{index}{round(time.time() * 1000)}"
         # распаковываем данные о том, из чего состоит блюдо
@@ -103,16 +104,14 @@ class BaseDish(Recipy):
 
         self.oven_unit = free_oven_id
         self.status = "received"
-        # self.chain_list = [self.get_dough(self.id, self.oven_unit, 6)]
+        self.chain_list = [Recipy.start_sauce]
         # (program_id, plan_duration) если плановая будет не нужна, удалить и исправить индексы контроллеров
         self.baking_program = dish_data["filling"]["cooking_program"]
         self.heating_program = dish_data["filling"]["heating_program"]
         self.stop_baking_time = None
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         # self.pickup_point_unit: int
-        # self.plan_duration = sum([self.dough.dough_plan_duration, self.sauce.sauce_plan_duration])
 
-        super().__init__()
 
     def halfstuff_cell_evaluation(self):
         """Эта группа фнукций запускает процедуру назначения пф и назначает ячейку для каждого пф."""
@@ -128,7 +127,6 @@ class BaseDish(Recipy):
     def __repr__(self):
         return f"Блюдо {self.id} состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  " \
                f"\"Зарезервирована печь\" {self.oven_unit} Статус {self.status}"
-
 
 
 class BasePizzaPart(object):
@@ -185,7 +183,7 @@ class BaseFilling(object):
         self.filling_content = filling_data["content"]
         # тут хранится словарь? с перечнем ингредиентов и кол-вом по рецепту
         self.filling_halfstuffs = {"halfstuff_1": ("расположение", "тип нарезки"),
-                          "halfstuff_2": ("расположение", "тип нарезки")}
+                                   "halfstuff_2": ("расположение", "тип нарезки")}
 
     def __repr__(self):
         return f"Начинка {self.filling_id}"
@@ -239,4 +237,3 @@ class BaseAdditive(BasePizzaPart):
 #     def __repr__(self):
 #         return f"Блюдо {self.id} состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  " \
 #                f"\"Зарезервирована печь\" {self.oven_unit} Статус {self.status}"
-

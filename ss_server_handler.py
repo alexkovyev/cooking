@@ -35,7 +35,7 @@ async def new_order_handler(request):
             print("С рецептом", order_content)
             lock = asyncio.Lock()
             async with lock:
-                data.create_new_order(order_content)
+                await data.create_new_order(order_content)
             return web.Response(text="новый заказ принят")
 
 

@@ -8,7 +8,7 @@ class Movement(object):
     async def movement(n, *args):
         print("Запустилась работа робота")
         await asyncio.sleep(n)
-        result = random.choice([True, True, True])
+        result = random.choice([True, True])
         print("Работа робота завершена")
         return result
 
@@ -25,29 +25,26 @@ class RBA(Movement):
 
     @classmethod
     async def atomic(cls, **kwargs):
-        duration = kwargs["duration"]
-        atomic_name = kwargs["atomic_name"]
+        place = kwargs["place"]
+        atomic_name = kwargs["name"]
         print("RA выполняет атомарное действие", atomic_name)
+        duration = random.randint(1, 10)
         result = await cls.movement(duration)
         return result
 
-    # @classmethod
-    # async def set_position(cls, duration):
-    #     print("Начинается позиционирование")
-    #     result = await cls.movement(duration)
-    #     return result
-    #
-    # @classmethod
-    # async def get_vane(cls, duration):
-    #     # нужно ли указывать тип захвата?
-    #     print("Примагничиваем захват")
-    #     result = await cls.movement(duration)
-    #     return result
-    #
-    # @classmethod
-    # async def get_out_the_oven(cls, duration):
-    #     # нужна ли эта команда или это часть общей? Поездка на станцию нарезки отдельно.
-    #     # Какие парамеры кроме времени?
-    #     print("Выезжаем из печи")
-    #     result = await cls.movement(duration)
-    #     return result
+    @classmethod
+    async def get_current_location(cls):
+        """Возвращает текущее местоположение RA"""
+        return "oven 1"
+
+    @classmethod
+    async def calculate_time(cls, current_destination, forward_destination):
+        """Считает время доезда от точки А до Б в миллисекундах"""
+        return 12
+
+    @classmethod
+    async def get_current_destination(cls):
+        pass
+
+    async def get_atomic_action_time(name = "get_vane_from_oven", place = "oven 17"):
+        pass

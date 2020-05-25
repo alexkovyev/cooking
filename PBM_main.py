@@ -1,6 +1,7 @@
 """Этот модуль управляет заказами и блюдами"""
 import asyncio
 import time
+from queue import Queue
 
 from collections import deque
 
@@ -16,14 +17,18 @@ class PizzaBotMain(object):
 
     def __init__(self, equipment_data, recipes):
         self.equipment = Equipment(equipment_data)
+        self.recipes = recipes
         self.is_cooking_paused = False
         # все заказы за текущий сеанс работы, {id: BaseOrder}
         self.current_orders_proceed = {}
         # все неприготовленые блюда
         self.current_dishes_proceed = {}
         self.time_to_cook_all_dishes_left = 0
-        self.orders_requested_for_delivery = deque()
-        self.recipes = recipes
+        self.orders_requested_for_delivery = {}
+        self.is_free = True
+        self.main_queue = Queue()
+        self.delivety_queue = Queue()
+        self.maintain_queue = Queue()
 
     def checking_order_for_double(self, new_order_id):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке
@@ -48,14 +53,14 @@ class PizzaBotMain(object):
         """
         new_order = {"refid": new_order_id,
                      "dishes": [
-                         {"dough": {"id":2},
+                         {"dough": {"id": 2},
                           "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
-                         "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
-                         "additive":{"id": 7}},
-                         {"dough": {"id":1},
+                          "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
+                          "additive": {"id": 7}},
+                         {"dough": {"id": 1},
                           "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
-                         "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
-                         "additive":{"id": 1}},
+                          "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
+                          "additive": {"id": 1}},
                      ]
                      }
         return new_order
@@ -100,19 +105,18 @@ class PizzaBotMain(object):
         'cooking_program': (1, 180), 'heating_program': (1, 20), 'chain': {}},
 
         'additive': {'id': 1, 'recipe': {1: 5}}}]}
-
-        'sauce': {'id': 2, 'content': ((1, 5), (2, 25)), 'recipe': {'duration': 20, 'content': {1: {'program': 1, 'sauce_station': None, 'qt': 5}, 2: {'program': 3, 'sauce_station': None, 'qt': 25}}}}, 'filling': {'id': 1, 'content': ((6, {'program_id': 2, 'duration': 10}), (2, {'program_id': 1, 'duration': 12}), (3, {'program_id': 5, 'duration': 15}), (3, {'program_id': 8, 'duration': 8}), (6, {'program_id': 4, 'duration': 17}), (8, {'program_id': 9, 'duration': 9})), 'cooking_program': (2, 180), 'heating_program': (2, 20), 'chain': {}}, 'additive': {'id': 7, 'recipe': {1: 5}}}, {'dough': {'id': 1, 'recipe': {1: 10, 2: 5, 3: 10, 4: 10, 5: 12, 6: 7, 7: 2}}, 'sauce': {'id': 2, 'content': ((1, 5), (2, 25)), 'recipe': {'duration': 20, 'content': {1: {'program': 1, 'sauce_station': None, 'qt': 5}, 2: {'program': 3, 'sauce_station': None, 'qt': 25}}}}, 'filling': {'id': 1, 'content': ((6, {'program_id': 2, 'duration': 10}), (2, {'program_id': 1, 'duration': 12}), (3, {'program_id': 5, 'duration': 15}), (3, {'program_id': 8, 'duration': 8}), (6, {'program_id': 4, 'duration': 17}), (8, {'program_id': 9, 'duration': 9})), 'cooking_program': (1, 180), 'heating_program': (1, 20), 'chain': {}}, 'additive': {'id': 1, 'recipe': {1: 5}}}]}
-
 """
+
         def create_sauce_recipe(self, dish):
+            """Этот метод выбирает рецепт для конкретного компонента соуса из общей базы рецептов"""
             sauce_id = dish["sauce"]["id"]
             dish["sauce"]["recipe"] = self.recipes["sauce"][sauce_id]
             for component, my_tuple in zip(dish["sauce"]["recipe"]["content"], dish["sauce"]["content"]):
                 dish["sauce"]["recipe"]["content"][component]["qt"] = my_tuple[1]
             print("составили рецепт соуса", dish["sauce"])
 
-
         def create_filling_recipe(self, dish):
+            """Этот метод выбирает рецепт начинки для начинки в общем и для каждого компонента начинки в целом"""
             filling_id = dish["filling"]["id"]
             dough_id = dish["dough"]["id"]
             dish["filling"]["cooking_program"] = self.recipes["filling"][filling_id]["cooking_program"][dough_id]
@@ -123,7 +127,6 @@ class PizzaBotMain(object):
             dish["filling"]["content"] = tuple(zip(halfstaff_content, cutting_program))
             print("Составили рецепт начинки", dish["filling"])
 
-
         for dish in new_order["dishes"]:
             dish["dough"]["recipe"] = self.recipes["dough"]
             create_sauce_recipe(self, dish)
@@ -131,7 +134,12 @@ class PizzaBotMain(object):
             dish["additive"]["recipe"] = self.recipes["additive"]
             print("В блюдо добавили рецепт")
 
-    def create_new_order(self, new_order):
+    def fill_current_dishes_proceed(self, dish):
+        """ Добавляет блюда заказа в self.current_dishes_proceed
+        @:param order: экземпляр класса блюдо, созданный в self.create_new_order"""
+        self.current_dishes_proceed[dish.id] = dish
+
+    async def create_new_order(self, new_order):
         """Этот метод создает экземпляр класса Order и заносит его в словарь self.current_orders_proceed
         @:params:
         new_order - это словарь с блюдами, получаемый из БД в рамках метода get_order_content_from_db """
@@ -146,20 +154,42 @@ class PizzaBotMain(object):
             if order:
                 # если заказ создан успешно, помещаем его в словарь всех готовящихся заказов
                 self.current_orders_proceed[order.ref_id] = order
+                # for dish in order.dishes:
+                #     self.main_queue.append((1, dish))
+                for dish in order.dishes:
+                    self.fill_current_dishes_proceed(dish)
+                    self.put_chains_in_queue(dish)
+
                 # перемещаем заказы в словарь всех готовящихся блюд
                 # self.fill_current_dishes_proceed(order)
         # придумать ошибки какие могут быть
         except ValueError:
             pass
 
-    def fill_current_dishes_proceed(self, order):
-        """ Добавляет блюда заказа в self.current_dishes_proceed
-        @:param order: экземпляр класса заказ, созданный в self.create_new_order"""
+    # def fill_current_dishes_proceed(self, order):
+    #     """ Добавляет блюда заказа в self.current_dishes_proceed
+    #     @:param order: экземпляр класса заказ, созданный в self.create_new_order"""
+    #
+    #     for dish in order.dishes:
+    #         self.current_dishes_proceed[dish.id] = dish
 
-        for dish in order.dishes:
-            self.current_dishes_proceed[dish.id] = dish
+    def put_chains_in_queue(self, dish):
+        """Добавляет чейны рецепта в очередь готовки в виде кортежа (dish, chain)"""
+        chains = dish.chain_list
+        for chain in chains:
+            self.main_queue.put((dish, chain))
+        self.is_free = False
 
-    async def hello_from_qr_code(self):
+    def check_if_free(self):
+        one = True if self.main_queue.empty() else False
+        two = True if self.maintain_queue.empty() else False
+        three = True if self.delivety_queue.empty() else False
+        self.is_free = True if one and two and three else False
+        print(one, two, three)
+        print(self.is_free)
+
+    async def hello_from_qr_code(self, qr_code_data):
+        self.delivety_queue.put(qr_code_data)
         print("QR код обработан", time.time())
 
     async def hello_from_broken_oven(self):
@@ -175,9 +205,10 @@ class PizzaBotMain(object):
             event = cntrls_events.get_dispatcher_event(event_name)
             while True:
                 event_data = await event
-                qr_code_data = event_data[1]["params"]
+                _, qr_code_data = event_data
+                qr_code_data = qr_code_data["params"]
                 print(qr_code_data)
-                await self.hello_from_qr_code()
+                await self.hello_from_qr_code(qr_code_data)
 
         async def wait_for_hardware_status_changed(cntrls_events):
             event_name = "hardware_status_changed"
@@ -195,52 +226,39 @@ class PizzaBotMain(object):
 
         while True:
             print("Работает cooking", time.time())
-            cooking_queue = deque()
-            print("В списке на выдачу", self.orders_requested_for_delivery)
 
-            if self.is_cooking_paused:
-                await self.cooking_pause_handler()
-                # print("Приостанавливаем работу")
-                # await asyncio.sleep(10)
+            # if self.current_dishes_proceed.keys():
+            #     print("Начнаем готовить")
+            #     _, current_dish = self.current_dishes_proceed.popitem()
+            #     for chain in current_dish.chain_list:
+            #         is_chain_succeed = await chain(current_dish)
+            #         print("Результат из вызова", is_chain_succeed)
+            #         if not is_chain_succeed:
+            #             print("Блюло не приготовилось")
+            #             break
 
-            elif self.orders_requested_for_delivery:
-                await self.dish_delivery()
-
-            elif self.current_dishes_proceed.keys():
-                print("Начнаем готовить")
-                _, current_dish = self.current_dishes_proceed.popitem()
-                print(current_dish)
-                await current_dish.start_dish_cooking()
-
-            # elif today_orders.current_dishes_proceed.keys():
-            #     print("Начинаем готовить")
-            #     _, current_dish = today_orders.current_dishes_proceed.popitem()
-            #     print(current_dish)
-            #     # await current_dish.start_dish_cooking(today_orders)
-
-            else:
+            self.check_if_free()
+            if self.is_free:
                 print("Dancing 3 secs")
-                self.time_to_cook_all_dishes_left += 55
                 await asyncio.sleep(3)
-                print()
+            else:
+                if not self.delivety_queue.empty():
+                    print("Выдаем заказ")
+                    self.delivety_queue.get()
+                    await asyncio.sleep(5)
+                elif not self.main_queue.empty():
+                    print("Готовим блюдо")
+                    dish, chain_to_do = self.main_queue.get()
+                    await chain_to_do(dish)
 
-    # def total_cooking_update(self):
-    #     pass
-    #
-    # async def cooking_pause_handler(self):
-    #     print("Приостанавливаем работу")
-    #     #Controllers.disable_qrcode_validator()
-    #     #RBA.go_to_transport_position()
-    #     await asyncio.sleep(10)
-    #     pass
-    #
-    # async def dish_delivery(self):
-    #     print("Cooking: Обрабатываем сообщение от контроллера")
-    #     print("классное сообщение от контролера - ВЫДАЧА заказа",
-    #     self.orders_requested_for_delivery.popitem())
-    #     await asyncio.sleep(5)
-    #     print("ВЫДАЧА заказа завершена")
-    #     print(time.time())
+                elif not self.maintain_queue.empty():
+                    print("Моем или выкидываем пиццу")
+
+
+            # else:
+            #     print("Dancing 3 secs")
+            #     await asyncio.sleep(3)
+
 
     """Валиация qr кода
        входные данные: чек код заказа и номер пункта выдачи
@@ -300,9 +318,9 @@ class PizzaBotMain(object):
 
     # не надо вызывать, поскольку постоянно идет проверка на наличие заказов в orders_requested_for_delivery
     # async def order_delivery_handler(self):
-       # """Обрабатывает процедуру получения заказа - Настя"""
-       # print("получение заказа")
-       # pass
+    # """Обрабатывает процедуру получения заказа - Настя"""
+    # print("получение заказа")
+    # pass
 
     async def present_delivery_handler(self):
         """Обрабатывает процедуру получения подарка"""
