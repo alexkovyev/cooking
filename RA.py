@@ -13,7 +13,7 @@ class Movement(object):
         return result
 
 
-class RBA(Movement):
+class RA(Movement):
 
     @classmethod
     async def move_to_position(clx, destination, duration):
@@ -38,13 +38,14 @@ class RBA(Movement):
         return "oven 1"
 
     @classmethod
+    async def is_capture_is_gripper(cls):
+        """Проверяет является ли текущий захват гриппером"""
+        return random.choice([True, False, True])
+
+    @classmethod
     async def calculate_time(cls, current_destination, forward_destination):
         """Считает время доезда от точки А до Б в миллисекундах"""
         return 12
 
-    @classmethod
-    async def get_current_destination(cls):
-        pass
-
-    async def get_atomic_action_time(name = "get_vane_from_oven", place = "oven 17"):
+    async def get_atomic_action_time(name="get_vane_from_oven", place="oven 17"):
         pass

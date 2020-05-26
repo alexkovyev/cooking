@@ -84,6 +84,51 @@ class BaseOrder(object):
          Что тут делаем по сути? Как записываем в бд, удаляем сами объект или ждем сборщика мусора?"""
         pass
 
+    # Алина код
+    def change_status(self, new_status):
+        """Метод для смены статуса заказа
+        Возвращается true, если смена статуса прошла успешно, и false, если такой статус не прдусмотрен
+        Вызывается после метода can_change"""
+        if new_status in self.ORDER_STATUS:
+            self.status = new_status
+            return True
+        return False
+
+    # Алина код
+    def can_change(self, new_status):
+        """Метод, который проверяет, можно ли изменить статус заказа на new_status
+        Возвращается true, если сменить можно, и false, если статусы блюд не соответствуют новому статусу заказа"""
+        SAME_STATUS = ["ready", "packed", "wait to delivery", "failed_to_be_cooked", "time_is_up"]
+        if len(self.dishes) == 1:
+            if new_status in SAME_STATUS:
+                if self.dishes[0].status == new_status:
+                    return True
+                return False
+            elif new_status == "cooking":
+                if self.dishes[0].status == "cooking":
+                    return True
+                return False
+            else:
+                return True
+        else:  # для двух блюд в заказе:
+            if new_status in SAME_STATUS:
+                if self.dishes[0].status == self.dishes[1].status == new_status:
+                    return True
+            else:
+                if new_status == "partially_ready":
+                    if (self.dishes[0].status == "ready" or self.dishes[1].status == "ready") and \
+                            (self.dishes[0].status == "failed_to_be_cooked" or self.dishes[1].status
+                             == "failed_to_be_cooked"):
+                        return True
+                    return False
+                elif new_status == "cooking":
+                    if self.dishes[0].status == "cooking" or self.dishes[1].status == "cooking":
+                        return True
+                    return False
+                else:
+                    return True
+
+
     def __repr__(self):
         return f"Заказ № {self.ref_id}"
 
@@ -104,7 +149,8 @@ class BaseDish(Recipy):
 
         self.oven_unit = free_oven_id
         self.status = "received"
-        self.chain_list = [Recipy.start_sauce]
+        self.chain_list = []
+        self.recipe_chain_creation()
         # (program_id, plan_duration) если плановая будет не нужна, удалить и исправить индексы контроллеров
         self.baking_program = dish_data["filling"]["cooking_program"]
         self.heating_program = dish_data["filling"]["heating_program"]
@@ -123,6 +169,14 @@ class BaseDish(Recipy):
         # self.filling = None
         # self.additive.halfstuff_cell = result[3]
         pass
+
+    def recipe_chain_creation(self):
+        self.chain_list.append(Recipy.start_sauce)
+        for filling_item in self.filling.filling_content:
+            self.chain_list.append(Recipy.start_filling)
+            self.chain_list.append(Recipy.cut_the_product)
+        # return self.chain_list
+
 
     def __repr__(self):
         return f"Блюдо {self.id} состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  " \
@@ -176,7 +230,10 @@ class BaseSauce(BasePizzaPart):
 
 
 class BaseFilling(object):
-    """Этот класс содержит информацию о начинке."""
+    """Этот класс содержит информацию о начинке.
+    filling_data["content"] сеодержит кортеж котрежей.
+    Вложенный кортеж - (halfstaff_id, cutting_program)
+    """
 
     def __init__(self, filling_data):
         self.filling_id = filling_data["id"]

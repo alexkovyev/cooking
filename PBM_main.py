@@ -185,7 +185,6 @@ class PizzaBotMain(object):
         two = True if self.maintain_queue.empty() else False
         three = True if self.delivety_queue.empty() else False
         self.is_free = True if one and two and three else False
-        print(one, two, three)
         print(self.is_free)
 
     async def hello_from_qr_code(self, qr_code_data):
@@ -237,6 +236,8 @@ class PizzaBotMain(object):
             #             print("Блюло не приготовилось")
             #             break
 
+            time_limit = None
+
             self.check_if_free()
             if self.is_free:
                 print("Dancing 3 secs")
@@ -249,7 +250,10 @@ class PizzaBotMain(object):
                 elif not self.main_queue.empty():
                     print("Готовим блюдо")
                     dish, chain_to_do = self.main_queue.get()
-                    await chain_to_do(dish)
+                    if dish.status != "failed_to_be_cooked":
+                        await chain_to_do(dish)
+                    else:
+                        continue
 
                 elif not self.maintain_queue.empty():
                     print("Моем или выкидываем пиццу")
