@@ -37,7 +37,7 @@ async def event_generator(cntrls_events):
                                                        "status": "broken"}
         """
         print("Сработало событие поломка печи", time.time())
-        cntrls_events.hardware_status_changed('owen_cell_2', 'broken')
+        cntrls_events.hardware_status_changed('21', 'broken')
 
     while True:
         # это эмуляция работы контроллеров по генерации разных событий

@@ -1,7 +1,6 @@
 import time
 
 from recipe_class import Recipy
-from settings import QT_DISH_PER_ORDER
 
 
 class BaseOrder(object):
@@ -18,23 +17,20 @@ class BaseOrder(object):
                     "failed_to_be_cooked", "not_delivered"]
 
     def __init__(self, new_order, ovens_reserved):
-        self.qt_dish_per_order = QT_DISH_PER_ORDER
 
         self.ref_id = new_order["refid"]
-        self.dishes = self.dish_creation(new_order, ovens_reserved)
+        self.dishes = self.dish_creation(new_order["dishes"], ovens_reserved)
         self.status = "received"
         self.liquidation_time_pick_point = None
         self.pickup_point = None
         # self.delivery_time: datetime
 
-    def dish_creation(self, new_order, ovens_reserved):
+    def dish_creation(self, dishes, ovens_reserved):
         """Creates list of dishes objects in order"""
-        # сделано так, тк номер в списке придает "уникальность" id блюду
-        if len(new_order["dishes"]) == self.qt_dish_per_order:
-            self.dishes = [BaseDish(dish, ovens_reserved[index], index) for index, dish in enumerate(new_order[
-                                                                                                         "dishes"])]
-        else:
-            self.dishes = [BaseDish(new_order["dishes"][0], ovens_reserved[0], index=1)]
+
+        self.dishes = [BaseDish(dish_id, dishes[dish_id], ovens_reserved[index])
+                       for index, dish_id in enumerate(dishes)]
+
         return self.dishes
 
     def is_order_ready(self):
@@ -137,10 +133,9 @@ class BaseDish(Recipy):
     """Этот класс представляет собой шаблон блюда в заказе."""
     DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
 
-    def __init__(self, dish_data, free_oven_id, index):
+    def __init__(self, dish_id, dish_data, free_oven_id):
         super().__init__()
-        # создаем уникальное имя блюда
-        self.id = f"{index}{round(time.time() * 1000)}"
+        self.id = dish_id
         # распаковываем данные о том, из чего состоит блюдо
         self.dough = BaseDough(dish_data["dough"])
         self.sauce = BaseSauce(dish_data["sauce"])

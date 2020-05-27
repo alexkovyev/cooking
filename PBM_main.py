@@ -39,34 +39,58 @@ class PizzaBotMain(object):
     async def get_order_content_from_db(self, new_order_id):
         """Этот метод вызывает процедуру 'Получи состав блюд в заказе' и возвращает словарь вида
         {"refid": new_order_id,
-                     "dishes": [
-                         {"dough": {"id":2},
-                          "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
-                         "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
-                         "additive":{"id": 7}},
-                         {"dough": {"id":1},
-                          "sauce": {"id": 3, "content": ((1, 5), (2, 25))},
-                         "filling": {"id": 4, "content": (6, 2, 3, 3, 6, 8))},
-                         "additive":{"id": 1}},
-                     ]
+                     "dishes": {"40576654-9f31-11ea-bb37-0242ac130002":
+                         {
+                             "dough": {"id": 2},
+                             "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
+                             "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
+                             "additive": {"id": 7}
+                         }
+                         ,
+                         "6327ade2-9f31-11ea-bb37-0242ac130002":
+                             {
+                                 "dough": {"id": 1},
+                                 "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
+                                 "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
+                                 "additive": {"id": 1}
+                             }
+                     }
                      }
         """
         new_order = {"refid": new_order_id,
-                     "dishes": [
-                         {"dough": {"id": 2},
-                          "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
-                          "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
-                          "additive": {"id": 7}},
-                         {"dough": {"id": 1},
-                          "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
-                          "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
-                          "additive": {"id": 1}},
-                     ]
+                     "dishes": {"40576654-9f31-11ea-bb37-0242ac130002":
+                         {
+                             "dough": {"id": 2},
+                             "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
+                             "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
+                             "additive": {"id": 7}
+                         }
+                         ,
+                         "6327ade2-9f31-11ea-bb37-0242ac130002":
+                             {
+                                 "dough": {"id": 1},
+                                 "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
+                                 "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
+                                 "additive": {"id": 1}
+                             }
+                     }
                      }
         return new_order
 
     def get_recipe_data(self, new_order):
         """Этот метод добавляет в данные о блюде параметры чейнов рецепта для конкретного ингредиента
+        :param словарь блюд из заказа
+        {'40576654-9f31-11ea-bb37-0242ac130002':
+            {'dough': {'id': 2},
+            'sauce': {'id': 2, 'content': ((1, 5), (2, 25))},
+            'filling': {'id': 1, 'content': (6, 2, 3, 3, 6, 8)},
+            'additive': {'id': 7}},
+        '6327ade2-9f31-11ea-bb37-0242ac130002':
+            {'dough': {'id': 1},
+            'sauce': {'id': 2, 'content': ((1, 5), (2, 25))},
+            'filling': {'id': 1, 'content': (6, 2, 3, 3, 6, 8)},
+            'additive': {'id': 1}}}
+
         Возвращаемый результат, где filling -->content tuple 0 - halfstaff_id, 1 - {cutting_program}
         {'refid': 65, 'dishes': [
         {'dough': {'id': 2, 'recipe': {1: 10, 2: 5, 3: 10, 4: 10, 5: 12, 6: 7, 7: 2}},
@@ -107,6 +131,8 @@ class PizzaBotMain(object):
         'additive': {'id': 1, 'recipe': {1: 5}}}]}
 """
 
+        # print("Входные данные", new_order)
+
         def create_sauce_recipe(self, dish):
             """Этот метод выбирает рецепт для конкретного компонента соуса из общей базы рецептов"""
             sauce_id = dish["sauce"]["id"]
@@ -127,7 +153,7 @@ class PizzaBotMain(object):
             dish["filling"]["content"] = tuple(zip(halfstaff_content, cutting_program))
             print("Составили рецепт начинки", dish["filling"])
 
-        for dish in new_order["dishes"]:
+        for dish in new_order.values():
             dish["dough"]["recipe"] = self.recipes["dough"]
             create_sauce_recipe(self, dish)
             create_filling_recipe(self, dish)
@@ -145,12 +171,10 @@ class PizzaBotMain(object):
         new_order - это словарь с блюдами, получаемый из БД в рамках метода get_order_content_from_db """
 
         try:
-            # резервируем печи для заказа
-            ovens_reserved = [self.equipment.oven_reserve() for dish in new_order["dishes"]]
+            # резервируем печи для заказа (сразу 2 шт)
+            ovens_reserved = [self.equipment.oven_reserve(dish) for dish in new_order["dishes"]]
             # создаем экземпляр класса заказа
             order = BaseOrder(new_order, ovens_reserved)
-            print("Создан заказ", order)
-            print("Блюда в заказе", order.dishes)
             if order:
                 # если заказ создан успешно, помещаем его в словарь всех готовящихся заказов
                 self.current_orders_proceed[order.ref_id] = order
@@ -185,7 +209,7 @@ class PizzaBotMain(object):
         two = True if self.maintain_queue.empty() else False
         three = True if self.delivety_queue.empty() else False
         self.is_free = True if one and two and three else False
-        print(self.is_free)
+        print("Можно ли танцевать? ",self.is_free)
 
     async def hello_from_qr_code(self, qr_code_data):
         self.delivety_queue.put(qr_code_data)
@@ -200,21 +224,23 @@ class PizzaBotMain(object):
         print("Переключились в контролеры", time.time())
 
         async def wait_for_qr_code(cntrls_events):
+            """new_data - ckjdfhm {'ref_id': 65, 'pickup': 1}"""
             event_name = "qr_scanned"
             event = cntrls_events.get_dispatcher_event(event_name)
             while True:
                 event_data = await event
                 _, qr_code_data = event_data
                 qr_code_data = qr_code_data["params"]
-                print(qr_code_data)
                 await self.hello_from_qr_code(qr_code_data)
 
         async def wait_for_hardware_status_changed(cntrls_events):
+            """new_data - словарь {'unit_name': 'owen_cell_2', 'status': 'broken'} """
             event_name = "hardware_status_changed"
             event = cntrls_events.get_dispatcher_event(event_name)
             while True:
-                await event
-                await self.hello_from_broken_oven()
+                event_data = await event
+                _, new_data = event_data
+                await self.equipment.oven_broke_handler(new_data)
 
         qr_event_waiter = asyncio.create_task(wait_for_qr_code(cntrls_events))
         status_change_waiter = asyncio.create_task(wait_for_hardware_status_changed(cntrls_events))
@@ -258,11 +284,9 @@ class PizzaBotMain(object):
                 elif not self.maintain_queue.empty():
                     print("Моем или выкидываем пиццу")
 
-
             # else:
             #     print("Dancing 3 secs")
             #     await asyncio.sleep(3)
-
 
     """Валиация qr кода
        входные данные: чек код заказа и номер пункта выдачи
