@@ -141,6 +141,8 @@ class GetDough(ConfigMixin):
         print("Начинается chain Возьми тесто")
         self.result = await self.move_to_oven()
         print(f"Chain возьми тесто заказа is over", self.result, time.time())
+        if self.result:
+            sauce_task = asyncio.create_task(GetSauce.get_sauce(self))
         return self.result
 
     async def calculate_chain_time(self, destination, destination_to):
@@ -152,24 +154,27 @@ class GetSauce(object):
     """В этом классе описаны действия по добавлению соуса. """
 
     async def get_sauce(self):
-        print("Начинаем поливать соусом")
+        print("Начинаем поливать соусом", time.time())
+        # self.is_cut_station_ready = False
         recipe = self.sauce.sauce_cell
         print("Данные об ячейке", recipe)
         print("Время начала поливки соусом контроллерами", time.time())
-        self.result = await Controllers.give_sauce(recipe)
-        if self.result:
+        result = await Controllers.give_sauce(recipe)
+        if result:
             print("успешно полили соусом")
+            self.is_cut_station_free.set()
+            # self.is_cut_station_ready = True
         else:
             print("Не успешно полили соусом")
             self.status = "failed_to_be_cooked"
         return self.result
 
-    async def start_sauce(self):
-        futura = asyncio.ensure_future(GetDough.get_dough(self))
-        self.result = await futura
-        if self.result:
-            self.result = await self.get_sauce()
-        return self.result
+    # async def start_sauce(self):
+    #     futura = asyncio.ensure_future(GetDough.get_dough(self))
+    #     self.result = await futura
+    #     if self.result:
+    #         self.result = await self.get_sauce()
+    #     return self.result
 
 
 class Filling(ConfigMixin):
@@ -198,9 +203,14 @@ class Filling(ConfigMixin):
         CHAIN_ID = 2
 
         launch_params = {"atomic_name": "change_capture",
+                         "place":self.CAPTURE_STATION,
                          "capture_type": self.PRODUCT_CAPTURE_ID,
                          "duration": self.CHANGE_CAPTURE_TIME}
 
+        # print(self.is_cut_station_ready)
+        print("Ждем завершения станции нарезки", time.time())
+        await self.is_cut_station_free.wait()
+        print("Начинаем движение после контролеров соуса")
         result = await RA.atomic(**launch_params)
         if result:
             print("RA успешно подъехал к станции захватов")
@@ -268,7 +278,7 @@ class Filling(ConfigMixin):
 
     async def start_filling(self):
         print("Начинаем чейн привези и порежь продукт", time.time())
-        is_gripper = RA.is_capture_is_gripper()
+        is_gripper = await RA.is_capture_is_gripper()
         if not is_gripper:
             self.result = await self.get_product_capture()
         self.result = await self.go_to_fridge()

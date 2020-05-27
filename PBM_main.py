@@ -26,9 +26,9 @@ class PizzaBotMain(object):
         self.time_to_cook_all_dishes_left = 0
         self.orders_requested_for_delivery = {}
         self.is_free = True
-        self.main_queue = Queue()
-        self.delivety_queue = Queue()
-        self.maintain_queue = Queue()
+        self.main_queue = asyncio.Queue()
+        self.delivety_queue = asyncio.Queue()
+        self.maintain_queue = asyncio.Queue()
 
     def checking_order_for_double(self, new_order_id):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке
@@ -182,7 +182,7 @@ class PizzaBotMain(object):
                 #     self.main_queue.append((1, dish))
                 for dish in order.dishes:
                     self.fill_current_dishes_proceed(dish)
-                    self.put_chains_in_queue(dish)
+                    await self.put_chains_in_queue(dish)
 
                 # перемещаем заказы в словарь всех готовящихся блюд
                 # self.fill_current_dishes_proceed(order)
@@ -197,11 +197,11 @@ class PizzaBotMain(object):
     #     for dish in order.dishes:
     #         self.current_dishes_proceed[dish.id] = dish
 
-    def put_chains_in_queue(self, dish):
+    async def put_chains_in_queue(self, dish):
         """Добавляет чейны рецепта в очередь готовки в виде кортежа (dish, chain)"""
         chains = dish.chain_list
         for chain in chains:
-            self.main_queue.put((dish, chain))
+            await self.main_queue.put((dish, chain))
         self.is_free = False
 
     def check_if_free(self):
@@ -275,7 +275,7 @@ class PizzaBotMain(object):
                     await asyncio.sleep(5)
                 elif not self.main_queue.empty():
                     print("Готовим блюдо")
-                    dish, chain_to_do = self.main_queue.get()
+                    dish, chain_to_do = await self.main_queue.get()
                     if dish.status != "failed_to_be_cooked":
                         await chain_to_do(dish)
                     else:

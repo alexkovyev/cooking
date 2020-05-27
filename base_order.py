@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 from recipe_class import Recipy
@@ -144,6 +145,8 @@ class BaseDish(Recipy):
 
         self.oven_unit = free_oven_id
         self.status = "received"
+        # self.is_cut_station_ready = True
+        self.is_cut_station_free = asyncio.Event()
         self.chain_list = []
         self.recipe_chain_creation()
         # (program_id, plan_duration) если плановая будет не нужна, удалить и исправить индексы контроллеров
@@ -166,7 +169,7 @@ class BaseDish(Recipy):
         pass
 
     def recipe_chain_creation(self):
-        self.chain_list.append(Recipy.start_sauce)
+        self.chain_list.append(Recipy.get_dough)
         for filling_item in self.filling.filling_content:
             self.chain_list.append(Recipy.start_filling)
             self.chain_list.append(Recipy.cut_the_product)

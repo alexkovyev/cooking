@@ -40,7 +40,7 @@ class RA(Movement):
     @classmethod
     async def is_capture_is_gripper(cls):
         """Проверяет является ли текущий захват гриппером"""
-        return random.choice([True, False, True])
+        return random.choice([False, False, False])
 
     @classmethod
     async def calculate_time(cls, current_destination, forward_destination):
