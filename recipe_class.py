@@ -193,7 +193,8 @@ class Filling(ConfigMixin):
         result = await RA.move_to_position(destination, duration)
         if result:
             print("RA успешно подъехал к станции захватов")
-            await self.take_capture()
+            # await self.take_capture()
+            await Baking.new_run_baking(self)
         else:
             print("Ошибка подъезда к станции захватов")
 
@@ -336,6 +337,26 @@ class Baking(ConfigMixin):
         time_changes = await self.evaluate_baking_time(self)
         await self.time_change_handler(self, time_changes)
         await self.start_baking(self, time_changes)
+
+    async def my_test(self):
+        print("Начинается тест", time.time())
+        await asyncio.sleep(10)
+        print("Тест завершен", time.time())
+
+    async def new_run_baking(self):
+        print("начинаем печь", time.time())
+        time_changes = asyncio.get_running_loop().create_future()
+        print("создана futura", time.time(), time_changes)
+        baking = asyncio.get_running_loop().create_task(Controllers.bake(21, 4, time_changes))
+        print("Время перед time_changes", time.time())
+        await time_changes
+        print("Время после time_changes и перед test", time.time())
+        await self.my_test()
+        print("Время после теста и перед выпекой")
+        baking_result = await baking
+        print("Выпечка зарешена", time.time())
+        return baking_result
+
 
 
 class Recipy(GetDough, GetSauce, Filling):

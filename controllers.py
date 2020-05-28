@@ -61,7 +61,7 @@ class Movement(object):
         n = random.randint(2, 20)
         print("Запустилась работа контроллеров")
         await asyncio.sleep(n)
-        result = random.choice([True, True, False])
+        result = random.choice([True, True, True])
         print("Работа контроллеров завершена")
         return result
 
@@ -126,3 +126,11 @@ class Controllers(Movement):
         print("Начинаем выпечку")
         result = await cls.movement()
         return result
+
+    @classmethod
+    async def bake(clx, cell, recipe, cell_remained_time):
+        print("контроллеры начали печь", time.time())
+        cell_remained_time = {21: (time.time()+180), 20:(time.time()+80)}
+        await asyncio.sleep(15)
+        print("контроллеры закончили печь", time.time())
+        return True

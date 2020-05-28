@@ -212,7 +212,7 @@ class PizzaBotMain(object):
         print("Можно ли танцевать? ",self.is_free)
 
     async def hello_from_qr_code(self, qr_code_data):
-        self.delivety_queue.put(qr_code_data)
+        await self.delivety_queue.put(qr_code_data)
         print("QR код обработан", time.time())
 
     async def hello_from_broken_oven(self):
@@ -271,7 +271,7 @@ class PizzaBotMain(object):
             else:
                 if not self.delivety_queue.empty():
                     print("Выдаем заказ")
-                    self.delivety_queue.get()
+                    await self.delivety_queue.get()
                     await asyncio.sleep(5)
                 elif not self.main_queue.empty():
                     print("Готовим блюдо")
