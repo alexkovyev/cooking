@@ -173,7 +173,13 @@ class BaseDish(Recipy):
         for filling_item in self.filling.filling_content:
             self.chain_list.append(Recipy.start_filling)
             self.chain_list.append(Recipy.cut_the_product)
-        # return self.chain_list
+        # return self.
+
+    async def my_test(self, time_changes):
+        print("Начинается тест", time.time())
+        print(time_changes)
+        await asyncio.sleep(10)
+        print("Тест завершен", time.time())
 
 
     def __repr__(self):

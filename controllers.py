@@ -4,9 +4,22 @@ import time
 
 from pydispatch import Dispatcher
 
+"""PBM использует следующие методы и объекты контроллеров:
+1. экземпляр класса ControllersEvents cntrls_events
+2. методы класса Controller:
+   - give_dough
+   - give_sauce
+   - cut_the_product
+   - turn_oven_heating_on
+   - start_baking Предлагаю объединить с turn_oven_heating_on, при прогреве 
+   в качве baking_program указать id программы прогрева
+   
+   Методы упаковки и выдачи заказа еще не готовы 
+"""
+
 
 class ControllersEvents(Dispatcher):
-    """
+    """ Это внутренний метод контроллеров
     Dispatcher for controller event handlers. DON'T CREATE instances of this class, use
     cntrls_events.
     """
@@ -21,17 +34,28 @@ class ControllersEvents(Dispatcher):
 
 cntrls_events = ControllersEvents()
 
+
 async def event_generator(cntrls_events):
+    """ PBM подписывается на следующие уведомления:
+    - сканирование qr-code
+    - изменение статуса следующего оборудования: печи, станция нарезки, узел упаковки, соусо-поливательная станция,
+    окна выдачи. АРСЕНИЙ! если будет еще оборудование, добавь пжста
+    - необходимость провести мойку по причине накопления колво выполненных циклов
+    Описание события см в описании метода
+    """
 
     async def qr_code_scanning_alarm(cntrls_events):
-        """Нам в PBM нужен чек-код заказа (мы пока его называем ref_id) и идентификатор пункта выдачи (uuid4),
-        единый для Controllers, RA, PBM """
+        """ В теле уведомления (params) в словаре необходимо указать следующие данные
+        (пары key:value с аннотацией типов)
+        - "check_code": str,  value: str
+        - "pickup": str, value: uuid4 str
+        Идентификатор оборудования должен быть единым для всех элементов системы. """
         print("Сработало событие qr код", time.time())
         params = {"ref_id": 65, "pickup": 1}
         cntrls_events.qr_scanned(params)
 
     async def hardware_status_changed(cntrls_events):
-        """ ВОПРОС к контроллерам: по идее тут все оборудование. Вы просто выдаете идентификатор и статус
+        """ ВОПРОС ТРЕБУЕТ ОТВЕТА к контроллерам: по идее тут все оборудование. Вы просто выдаете идентификатор и статус
         или будет еще тип: "oven", "cut_station", те {"equipment_type": cut_station,
                                                       "uuid": o48932492834281,
                                                        "status": "broken"}
@@ -41,6 +65,7 @@ async def event_generator(cntrls_events):
 
     while True:
         # это эмуляция работы контроллеров по генерации разных событий
+        # Используется PBM для тестирования
         await asyncio.sleep(2)
         print("Выбираем событие", time.time())
         options = [qr_code_scanning_alarm, hardware_status_changed]
@@ -54,15 +79,16 @@ async def event_generator(cntrls_events):
 
 
 class Movement(object):
-    """Это эмуляция работы контроллеров в части засыпания при выполнении методов :)"""
+    """Это эмуляция работы контроллеров в части засыпания при выполнении методов :) Используется PBM
+    для тестирования"""
 
     @staticmethod
     async def movement(*args):
         n = random.randint(2, 20)
-        print("Запустилась работа контроллеров")
+        print("Запустилась работа метода контроллеров")
         await asyncio.sleep(n)
-        result = random.choice([True, True, True])
-        print("Работа контроллеров завершена")
+        result = random.choice([True, False, True])
+        print("Метод контроллеров завершен")
         return result
 
 
@@ -70,67 +96,65 @@ class Controllers(Movement):
 
     @classmethod
     async def give_dough(cls, dough_point):
-        """params: dough_point
-        return: bool """
+        """Метод обеспечивает выдачу теста
+        :param dough_point: uuid4 str
+        :return bool
+        """
         print("Выдаем тесто из тестовой станции №", dough_point)
         result = await cls.movement(dough_point)
         return result
 
     @classmethod
     async def give_sauce(cls, sauce_recipe):
+        """Метод обеспечивает поливание соусом
+        :param sauce_recipe: list [(), ()]
+        для вложенного кортежа: 0 - id насосной станции uuid str, 1 - программа поливки int
+        :return bool
+        """
         print("Поливаем соусом")
         print("Параметры из контроллеров считались", sauce_recipe)
-        # sauce_recipe=[(1, 1), (2, 2)] для вложенного кортежа: 0 - id насосной станции, 1 - программа поливки
         result = await cls.movement()
-        # нужно добавить уведомления от контроллеров, если 1-я попытка неудачна, запускается вторая.
-        # Алексей сказал, что вы будете машнным зрением определять можно ли повторно полить или прокатит
-        # ли "неуспешный" варант
-        # уведомление дожно содержать время на 2-ю попытку и колво ингредиентов (если нужно или убираем
-        # вторую попытку?)
         return result
 
     @classmethod
     async def cut_the_product(cls, cutting_program):
+        """Метод обеспечивает нарезку продукта
+        :param cutting_program: int
+        :return bool
+        """
         print("Начинаем резать продукт")
         result = await cls.movement()
-        # нужно добавить уведомления от контроллеров, если 1-я попытка неудачна, запускается вторая.
-        # уведомление дожно содержать время на 2-ю попытку
-        # Второй раз помидору не везем? в случае неудачи: на выброс?
         return result
 
     @classmethod
-    async def turn_oven_heating_on(cls, oven_id):
-        """Алексей сказал, что время прогрева печи всегда одинаковое для любой программы и
-        температура (режим) тоже, поэтому в параметрах только идентификатор печи"""
+    async def turn_oven_heating_on(cls, oven_id, time_changes_request):
+        """Метод запускает прогрев печи перед выпечкой и корочкообразовании.
+        Алексей утверждает, что это осуществляется по 1 программе (то есть время, режимы нагрева
+        и температура) одинакова для любого рецепта \ этапа.
+        time_changes_request добавлен по иницитиве Арсения для обеспечения единообразия интерфейсов
+        :param oven_id: uuid4 str
+               time_changes_request: futura object
+        :return futura_object returns dict {oven_id: unix_time} для всех печей, время которых изменилось
+                result: bool
+        """
         print("Включили нагрев печи", oven_id)
         result = await cls.movement()
         return result
 
     @classmethod
-    async def evaluate_baking_time(cls, oven_unit, baking_program):
-        """Метод определяет фактическое время, необходимое для выпечки с учетом загрузки печи
-        :param
-        oven_unit = идентификатор печи, uuid
-        baking_program = 2, те программа выпечки int
-        вопрос: при прогреве (до выпечки) и корочкообразовании в параметрах нужно указывать, тип операции?
-        так как программы корочки и выпечки могут сопасть по цифрам или не нужно и просто номер?
+    async def start_baking(cls, oven_unit, baking_program, time_changes_requset):
+        """Запускает выпечку в конкртеной печи
+        :param oven_unit: uuid4
+               baking_program: int
+               time_changes_request: futura object
+        ВОПРОС: нужно ли указывать тип операции (корочкообразование или выпечка? или просто номер программы),
+                так как программы корочки и выпечки могут сопасть по цифрам или не нужно и просто номер?
         :return
-        {oven_id: unix_time} для всех печей, время которых изменилось (и запрошенной тоже)
-        """
-        print("Считаем изменения времени")
-        return {21: (time.time()+180), 20:(time.time()+80)}
-
-    @classmethod
-    async def start_baking(cls, oven_unit, baking_program):
-        """Возвращает результат выпечки: успешно или нет """
-        print("Начинаем выпечку")
+               sets data in time_changes_request {oven_id: unix_time} для всех печей, время которых изменилось
+               result: bool or raise OvenError
+         """
+        print("Начинаем выпечку", time.time())
+        time_changes_requset.set_result({21: (time.time() + 180), 20: (time.time() + 80)})
         result = await cls.movement()
-        return result
-
-    @classmethod
-    async def bake(clx, cell, recipe, cell_remained_time):
-        print("контроллеры начали печь", time.time())
-        cell_remained_time = {21: (time.time()+180), 20:(time.time()+80)}
-        await asyncio.sleep(15)
         print("контроллеры закончили печь", time.time())
-        return True
+        return result

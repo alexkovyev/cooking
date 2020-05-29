@@ -349,11 +349,15 @@ class Baking(ConfigMixin):
         print("создана futura", time.time(), time_changes)
         baking = asyncio.get_running_loop().create_task(Controllers.bake(21, 4, time_changes))
         print("Время перед time_changes", time.time())
+        print(time_changes)
         await time_changes
+        print(time_changes)
+        await asyncio.sleep(20)
         print("Время после time_changes и перед test", time.time())
-        await self.my_test()
-        print("Время после теста и перед выпекой")
+        await self.my_test(time_changes)
+        print("Время после теста и перед выпекой", time.time())
         baking_result = await baking
+        print("Это результат выпечки", time.time(), baking_result)
         print("Выпечка зарешена", time.time())
         return baking_result
 

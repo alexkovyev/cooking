@@ -25,7 +25,7 @@ class PizzaBotMain(object):
         self.current_dishes_proceed = {}
         self.time_to_cook_all_dishes_left = 0
         self.orders_requested_for_delivery = {}
-        self.is_free = True
+        self.is_free = False
         self.main_queue = asyncio.Queue()
         self.delivety_queue = asyncio.Queue()
         self.maintain_queue = asyncio.Queue()
@@ -204,11 +204,14 @@ class PizzaBotMain(object):
             await self.main_queue.put((dish, chain))
         self.is_free = False
 
+    @property
     def check_if_free(self):
-        one = True if self.main_queue.empty() else False
-        two = True if self.maintain_queue.empty() else False
-        three = True if self.delivety_queue.empty() else False
-        self.is_free = True if one and two and three else False
+        """Проверяет можно ли танцеать, те все очереди пустые"""
+        if not all(
+            map(lambda p: p.empty(), (self.main_queue, self.maintain_queue, self.delivety_queue))):
+            self.is_free = False
+        else:
+            self.is_free = True
         print("Можно ли танцевать? ",self.is_free)
 
     async def hello_from_qr_code(self, qr_code_data):
@@ -264,7 +267,7 @@ class PizzaBotMain(object):
 
             time_limit = None
 
-            self.check_if_free()
+            self.check_if_free
             if self.is_free:
                 print("Dancing 3 secs")
                 await asyncio.sleep(3)
