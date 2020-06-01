@@ -1,17 +1,21 @@
 import asyncio
 import random
+import time
 
 
 class RAError(Exception):
+    """Класс ошибок RA"""
+
     def __init__(self):
         self.text = "Возникла ошибка RA"
 
 
 # это просто эмуляция работы RA, необходимая для тестирования PBM
 class Movement(object):
+    """Эмуляция работы RA для нужд PBM"""
 
     @staticmethod
-    async def movement(n, *args):
+    async def movement(n):
         print("Запустилась работа робота")
         await asyncio.sleep(n)
         result = random.choice([True, True])
@@ -21,11 +25,21 @@ class Movement(object):
 
 class RA(Movement):
 
-    def get_position_move_time(from_place: str, to_place: str):
-        pass
+    @classmethod
+    async def get_position_move_time(clx, from_place: str, to_place: str):
+        """ метод рассчитывает время на перемещение между точками.
+        Эмуляция работы: возвращает случайным образом список
+        из вариантов или пустой если точка не найдена.
+        :param
+           from_place: str
+           to_place: srt
+        :return: possible_duration (list[int])
+        """
+        result_choice = random.choice([[9, 15, 16, 8, 10], []])
+        return result_choice
 
     @classmethod
-    async def position_move(clx, place: str, duration: int):
+    async def position_move(cls, place: str, duration: int):
         """
         :param place: str
         :param duration: int
@@ -34,11 +48,21 @@ class RA(Movement):
                  # нужно определить типы ошибок
         """
         print("RBA двигается к печи", place)
-        result = await clx.movement(duration)
+        result = await cls.movement(duration)
         if result:
             return duration
         else:
             raise RAError
+
+    @classmethod
+    async def get_atomic_action_time(clx, name="get_vane_from_oven", place="oven 17"):
+        """
+        :param name: имя пакета атомарных действий, str
+        :param place: id оборудования
+        :return: int если успешно
+        :raise RAError
+        """
+        pass
 
     @classmethod
     async def atomic_action(cls, **kwargs):
@@ -50,19 +74,20 @@ class RA(Movement):
         return result
 
     @classmethod
-    async def get_current_location(cls):
+    async def dance(cls):
+        print("Танцуем", time.time())
+        await asyncio.sleep(1)
+
+    @classmethod
+    async def get_current_position(cls):
         """Возвращает текущее местоположение RA"""
         return "oven 1"
+
+    @classmethod
+    async def get_current_gripper(cls):
+        return
 
     @classmethod
     async def is_capture_is_gripper(cls):
         """Проверяет является ли текущий захват гриппером"""
         return random.choice([False, False, False])
-
-    @classmethod
-    async def calculate_time(cls, current_destination, forward_destination):
-        """Считает время доезда от точки А до Б в миллисекундах"""
-        return 12
-
-    async def get_atomic_action_time(name="get_vane_from_oven", place="oven 17"):
-        pass
