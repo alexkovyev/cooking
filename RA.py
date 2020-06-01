@@ -2,6 +2,12 @@ import asyncio
 import random
 
 
+class RAError(Exception):
+    def __init__(self):
+        self.text = "Возникла ошибка RA"
+
+
+# это просто эмуляция работы RA, необходимая для тестирования PBM
 class Movement(object):
 
     @staticmethod
@@ -15,16 +21,27 @@ class Movement(object):
 
 class RA(Movement):
 
-    @classmethod
-    async def move_to_position(clx, destination, duration):
-        # в качестве destination указываем конечный пункт назначения, текущее положение 'запоминает' RA
-        # нужно вернуть время фактическое ? нужно ли уведомляь о том, что запускается несколько попыток?
-        print("RBA двигается к печи", destination, "Время движения", duration)
-        result = await clx.movement(duration)
-        return result
+    def get_position_move_time(from_place: str, to_place: str):
+        pass
 
     @classmethod
-    async def atomic(cls, **kwargs):
+    async def position_move(clx, place: str, duration: int):
+        """
+        :param place: str
+        :param duration: int
+        :return: int if succeed
+                 raiseError if not
+                 # нужно определить типы ошибок
+        """
+        print("RBA двигается к печи", place)
+        result = await clx.movement(duration)
+        if result:
+            return duration
+        else:
+            raise RAError
+
+    @classmethod
+    async def atomic_action(cls, **kwargs):
         place = kwargs["place"]
         atomic_name = kwargs["name"]
         print("RA выполняет атомарное действие", atomic_name)

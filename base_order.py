@@ -175,12 +175,6 @@ class BaseDish(Recipy):
             self.chain_list.append(Recipy.cut_the_product)
         # return self.
 
-    async def my_test(self, time_changes):
-        print("Начинается тест", time.time())
-        print(time_changes)
-        await asyncio.sleep(10)
-        print("Тест завершен", time.time())
-
 
     def __repr__(self):
         return f"Блюдо {self.id} состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  " \

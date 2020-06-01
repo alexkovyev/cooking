@@ -23,13 +23,16 @@ class ControllersEvents(Dispatcher):
     Dispatcher for controller event handlers. DON'T CREATE instances of this class, use
     cntrls_events.
     """
-    _events_ = ['qr_scanned', 'hardware_status_changed']
+    _events_ = ['qr_scanned', 'hardware_status_changed', 'equipment_washing_request']
 
     def qr_scanned(self, _params):
         self.emit('qr_scanned', params=_params)
 
     def hardware_status_changed(self, _unit_name, _status):
         self.emit('hardware_status_changed', unit_name=_unit_name, status=_status)
+
+    def request_for_wash(self, _unit_name):
+        self.emit('equipment_washing_request', unit_name=_unit_name)
 
 
 cntrls_events = ControllersEvents()
@@ -63,13 +66,19 @@ async def event_generator(cntrls_events):
         print("Сработало событие поломка печи", time.time())
         cntrls_events.hardware_status_changed('21', 'broken')
 
+    async def equipment_washing_request(cntrls_events):
+        """Информирует о том, что необходимо провести мойку такого то оборудования"""
+        print("Нужно помыть оборудование", time.time())
+        _unit_name = "cut_station"
+        cntrls_events.request_for_wash(_unit_name)
+
     while True:
         # это эмуляция работы контроллеров по генерации разных событий
         # Используется PBM для тестирования
         await asyncio.sleep(2)
         print("Выбираем событие", time.time())
-        options = [qr_code_scanning_alarm, hardware_status_changed]
-        my_choice = random.randint(0, 1)
+        options = [qr_code_scanning_alarm, hardware_status_changed, equipment_washing_request]
+        my_choice = random.randint(0, 2)
         what_happened = options[my_choice]
         await what_happened(cntrls_events)
         n = random.randint(20, 40)
@@ -85,6 +94,7 @@ class Movement(object):
     @staticmethod
     async def movement(*args):
         n = random.randint(2, 20)
+        print("Время выпечки", n)
         print("Запустилась работа метода контроллеров")
         await asyncio.sleep(n)
         result = random.choice([True, False, True])
@@ -154,7 +164,7 @@ class Controllers(Movement):
                result: bool or raise OvenError
          """
         print("Начинаем выпечку", time.time())
-        time_changes_requset.set_result({21: (time.time() + 180), 20: (time.time() + 80)})
+        time_changes_requset.set_result({21: (time.time() + 180), 20: (time.time() + 80), "new": time.time()})
         result = await cls.movement()
         print("контроллеры закончили печь", time.time())
         return result

@@ -1,9 +1,6 @@
 """Этот модуль управляет заказами и блюдами"""
 import asyncio
 import time
-from queue import Queue
-
-from collections import deque
 
 from base_order import BaseOrder
 from equipment import Equipment
@@ -57,24 +54,21 @@ class PizzaBotMain(object):
                      }
                      }
         """
-        new_order = {"refid": new_order_id,
-                     "dishes": {"40576654-9f31-11ea-bb37-0242ac130002":
-                         {
-                             "dough": {"id": 2},
-                             "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
-                             "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
-                             "additive": {"id": 7}
-                         }
-                         ,
-                         "6327ade2-9f31-11ea-bb37-0242ac130002":
-                             {
-                                 "dough": {"id": 1},
-                                 "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
-                                 "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
-                                 "additive": {"id": 1}
-                             }
-                     }
-                     }
+        new_order = dict(refid=new_order_id, dishes={"40576654-9f31-11ea-bb37-0242ac130002":
+            {
+                "dough": {"id": 2},
+                "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
+                "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
+                "additive": {"id": 7}
+            },
+            "6327ade2-9f31-11ea-bb37-0242ac130002":
+                {
+                    "dough": {"id": 1},
+                    "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
+                    "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
+                    "additive": {"id": 1}
+                }
+        })
         return new_order
 
     def get_recipe_data(self, new_order):
@@ -208,22 +202,22 @@ class PizzaBotMain(object):
     def check_if_free(self):
         """Проверяет можно ли танцеать, те все очереди пустые"""
         if not all(
-            map(lambda p: p.empty(), (self.main_queue, self.maintain_queue, self.delivety_queue))):
+                map(lambda p: p.empty(), (self.main_queue, self.maintain_queue, self.delivety_queue))):
             self.is_free = False
         else:
             self.is_free = True
-        print("Можно ли танцевать? ",self.is_free)
+        print("Можно ли танцевать? ", self.is_free)
+        return self.is_free
 
     async def hello_from_qr_code(self, qr_code_data):
         await self.delivety_queue.put(qr_code_data)
         print("QR код обработан", time.time())
 
-    async def hello_from_broken_oven(self):
-        print("Изменение статуса оборудования обработано", time.time())
+    async def wash_me(self, new_data):
+        print("Получен запрос на помылку оборудования", new_data, time.time())
 
     async def controllers_alert_handler(self, cntrls_events):
         """Эта курутина обрабатывает уведомления от контроллеров: отказ оборудования и qr код """
-
         print("Переключились в контролеры", time.time())
 
         async def wait_for_qr_code(cntrls_events):
@@ -245,9 +239,19 @@ class PizzaBotMain(object):
                 _, new_data = event_data
                 await self.equipment.oven_broke_handler(new_data)
 
+        async def wait_wash_requests(cntrls_events):
+            """ """
+            event_name = "equipment_washing_request"
+            event = cntrls_events.get_dispatcher_event(event_name)
+            while True:
+                event_data = await event
+                _, new_data = event_data
+                await self.wash_me(new_data)
+
         qr_event_waiter = asyncio.create_task(wait_for_qr_code(cntrls_events))
         status_change_waiter = asyncio.create_task(wait_for_hardware_status_changed(cntrls_events))
-        await asyncio.gather(qr_event_waiter, status_change_waiter)
+        washing_request = asyncio.create_task(wait_wash_requests(cntrls_events))
+        await asyncio.gather(qr_event_waiter, status_change_waiter, washing_request)
 
     async def cooking(self):
         """Эта курутина обеспеивает вызов методов по приготовлению блюд и другой важной работе"""
