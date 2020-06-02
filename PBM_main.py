@@ -28,7 +28,6 @@ class PizzaBotMain(object):
         self.delivety_queue = asyncio.Queue()
         self.maintain_queue = asyncio.Queue()
 
-
     def checking_order_for_double(self, new_order_id):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке
         :return bool"""

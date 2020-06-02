@@ -51,10 +51,14 @@ class Recipy(ConfigMixin):
             raise RAError
         return duration
 
-    def choose_moving_time(self):
+    async def choose_moving_time(self):
         """
 
         """
+        pass
+
+    async def check_gripper(self):
+        """метод проверяет какой захват сейчас у """
         pass
 
     async def move_to_object(self, place_to):
@@ -152,6 +156,10 @@ class Recipy(ConfigMixin):
             self.status = asyncio.create_task(self.give_sauce())
         except RAError:
             print("Ошибка века")
+
+    async def get_filling_chain(self):
+        """Ченй по доставке и нарезки 1 п\ф"""
+        pass
 
 
 class Filling(ConfigMixin):
