@@ -4,6 +4,7 @@ import time
 
 from base_order import BaseOrder
 from equipment import Equipment
+from RA import RA
 
 
 class PizzaBotMain(object):
@@ -26,6 +27,7 @@ class PizzaBotMain(object):
         self.main_queue = asyncio.Queue()
         self.delivety_queue = asyncio.Queue()
         self.maintain_queue = asyncio.Queue()
+
 
     def checking_order_for_double(self, new_order_id):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке
@@ -198,7 +200,6 @@ class PizzaBotMain(object):
             await self.main_queue.put((dish, chain))
         self.is_free = False
 
-    @property
     def check_if_free(self):
         """Проверяет можно ли танцеать, те все очереди пустые"""
         if not all(
@@ -258,24 +259,14 @@ class PizzaBotMain(object):
 
         while True:
             print("Работает cooking", time.time())
-
-            # if self.current_dishes_proceed.keys():
-            #     print("Начнаем готовить")
-            #     _, current_dish = self.current_dishes_proceed.popitem()
-            #     for chain in current_dish.chain_list:
-            #         is_chain_succeed = await chain(current_dish)
-            #         print("Результат из вызова", is_chain_succeed)
-            #         if not is_chain_succeed:
-            #             print("Блюло не приготовилось")
-            #             break
-
             time_limit = None
 
-            self.check_if_free
+            self.is_free = self.check_if_free()
             if self.is_free:
-                print("Dancing 3 secs")
-                await asyncio.sleep(3)
+                print("Танцуем")
+                await RA.dance()
             else:
+                # запустить мeтод где RA, какой захват и другую подготовительную работу
                 if not self.delivety_queue.empty():
                     print("Выдаем заказ")
                     await self.delivety_queue.get()

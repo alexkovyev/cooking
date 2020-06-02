@@ -2,6 +2,7 @@ import asyncio
 import time
 
 from recipe_class import Recipy
+import PbmError
 
 
 class BaseOrder(object):
@@ -132,7 +133,8 @@ class BaseOrder(object):
 
 class BaseDish(Recipy):
     """Этот класс представляет собой шаблон блюда в заказе."""
-    DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
+    DISH_STATUSES = ["received", "cooking", "failed_to_be_cooked", "ready",
+                     "packed", "wait to delivery", "time_is_up"]
 
     def __init__(self, dish_id, dish_data, free_oven_id):
         super().__init__()
@@ -145,11 +147,7 @@ class BaseDish(Recipy):
 
         self.oven_unit = free_oven_id
         self.status = "received"
-        # self.is_cut_station_ready = True
-        self.is_cut_station_free = asyncio.Event()
-        self.chain_list = []
-        self.recipe_chain_creation()
-        # (program_id, plan_duration) если плановая будет не нужна, удалить и исправить индексы контроллеров
+        self.chain_list = self.recipe_chain_creation()
         self.baking_program = dish_data["filling"]["cooking_program"]
         self.heating_program = dish_data["filling"]["heating_program"]
         self.stop_baking_time = None
@@ -169,11 +167,38 @@ class BaseDish(Recipy):
         pass
 
     def recipe_chain_creation(self):
-        self.chain_list.append(Recipy.get_dough)
-        for filling_item in self.filling.filling_content:
-            self.chain_list.append(Recipy.start_filling)
-            self.chain_list.append(Recipy.cut_the_product)
-        # return self.
+        chain_list = []
+        chain_list.append(Recipy.chain_get_dough_and_sauce)
+        # for filling_item in self.filling.filling_content:
+        #     self.chain_list.append(Recipy.start_filling)
+        #     self.chain_list.append(Recipy.cut_the_product)
+        return chain_list
+
+    # def recipe_chain_creation(self):
+    #     chain_list = []
+    #     self.chain_list.append(Recipy.get_dough)
+    #     for filling_item in self.filling.filling_content:
+    #         self.chain_list.append(Recipy.start_filling)
+    #         self.chain_list.append(Recipy.cut_the_product)
+    #     return chain_list
+
+    def status_change(self, new_status):
+        """Метод меняет статус блюда.
+        что то коряво, переделать
+        """
+        try:
+            if new_status in self.DISH_STATUSES:
+                self.status = new_status
+                return self.status
+            else:
+                raise PbmError.PbmFatalError("Предлагаемый статус блюда не найден ")
+        except PbmError.PbmFatalError:
+            assert PbmError.PbmFatalError
+        try:
+            print("Запысываем статус в БД")
+            # обновление статуса в БД
+        except PbmError.DataBaseError:
+            print("Ошибка БД")
 
 
     def __repr__(self):

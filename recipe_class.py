@@ -1,13 +1,14 @@
 """Пока тут собрана информация о рецепте."""
 import asyncio
 import time
-import random
 
 from RA import RA
+from RA import RAError
 from controllers import Controllers
 
 
 class ConfigMixin(object):
+    """Временное хранение идентификаторов оборудования"""
     CUT_STATION_ID = 1
     CAPTURE_STATION = 2
     MOVE_TO_CAPTURE_STATION_TIME = 5
@@ -15,282 +16,108 @@ class ConfigMixin(object):
     PRODUCT_CAPTURE_ID = 1
 
 
-class GetDough(ConfigMixin):
-    """This class represents what should be done to take a vane from oven and get a dough to cut station"""
+class Recipy(ConfigMixin):
+    """Основной класс рецепта, содержит все действия по приготовлению блюда"""
 
     def __init__(self):
-        super().__init__()
-        self.duration = 30
-        self.result = False
+        self.is_cut_station_free = asyncio.Event()
+        self.time_limit = None
 
-    async def move_to_oven(self):
-        """Эта функция описывает движение до назначенной печи. Исполнитель - RBA."""
-
-        current_destination = await RA.get_current_location()
-        forward_destination = self.oven_unit
-
-        duration = await RA.calculate_time(current_destination, forward_destination)
-
-        self.result = await RA.position_move(forward_destination, duration)
-        if self.result:
-            print("RBA успешно подъехал к печи")
-            await self.get_vane_from_oven(current_destination=forward_destination)
+    @staticmethod
+    async def get_move_chain_duration(place_to):
+        """ Метод получает варианты длительности передвижения, выбирает тот, который
+        удовлетвоаряет условиям
+        :param place_to: str
+        :return: int
+        """
+        current_destination = await RA.get_current_position()
+        forward_destination = place_to
+        possible_duration = await RA.get_position_move_time(current_destination, forward_destination)
+        if possible_duration:
+            duration = min(possible_duration)
         else:
-            print("Ошибка подъезда")
-            self.status = "failed_to_be_cooked"
-        return self.result
+            raise RAError
+        return duration
 
-    async def get_vane_from_oven(self, current_destination):
+    @staticmethod
+    async def get_atomic_chain_duration(atomic_info):
+        """
+
+        :param atomic_info:
+        :return:
+        """
+        duration = await RA.get_atomic_action_time(**atomic_info)
+        if not duration:
+            raise RAError
+        return duration
+
+    def choose_moving_time(self):
+        """
+
+        """
+        pass
+
+    async def move_to_object(self, place_to):
+        """Эта функция описывает движение до определенного места."""
+        forward_destination = place_to
+
+        duration = await self.get_move_chain_duration(forward_destination)
+        try:
+            await RA.position_move(forward_destination, duration)
+            print("RBA успешно подъехал к", forward_destination)
+        except RAError:
+            self.status = "failed_to_be_cooked"
+            # есть ли какой то метод проверки работоспособности
+            # что деламем? сворачиваем работу или продолжаем дальше
+        return self.status
+
+    async def atomic_chain_execute(self, atomic_params_dict):
+        duration = await self.get_atomic_chain_duration(atomic_params_dict)
+        try:
+            await RA.atomic_action(**atomic_params_dict)
+            print("Успешно выполнили атомарное действие")
+        except RAError:
+            self.status = "failed_to_be_cooked"
+            print("Ошибка атомарного действия")
+        return self.status
+
+    async def get_vane_from_oven(self, *args):
         """Этот метод запускает группу атомарных действий RA по захвату лопатки из печи"""
-        CHAIN_ID = 2
+        atomic_params = {"name": "get_vane_from_oven",
+                          "place": self.oven_unit}
+        self.status = await self.atomic_chain_execute(atomic_params)
+        return self.status
 
-        launch_params = {"name": "get_vane_from_oven",
-                         "place": self.oven_unit}
-
-        self.result = await RA.atomic_action(**launch_params)
-        if self.result:
-            print("RBA взял лопатку")
-            await self.move_to_dough_station(current_destination)
-        else:
-            print("Ошибка взятия лопатки")
-            self.status = "failed_to_be_cooked"
-        return self.result
-
-    async def move_to_dough_station(self, current_destination):
-        """Запускает движение к станции теста"""
-
-        current_destination = current_destination
-        forward_destination = self.dough.halfstuff_cell
-
-        duration = await RA.calculate_time(current_destination, forward_destination)
-
-        print("поехали к станции теста")
-        self.result = await RA.position_move(forward_destination, duration)
-
-        if self.result:
-            print("приехали к станции теста")
-            await self.controllers_get_dough(current_destination=forward_destination)
-        else:
-            print("ошибка подъезда на станцию теста")
-            self.status = "failed_to_be_cooked"
-        return self.result
-
-    async def controllers_get_dough(self, current_destination):
+    async def controllers_get_dough(self, *args):
         """отдает команду контролеру получить тесто"""
-
-        print("берем тесто у контрллеров")
+        print("получаем тесто у контрллеров")
         dough_point = self.dough.halfstuff_cell
-        self.result = await Controllers.give_dough(dough_point)
-        if self.result:
+        chain_result = await Controllers.give_dough(dough_point)
+        if chain_result:
             print("взяли тесто у контроллеров")
-            await self.control_dough_position(current_destination)
         else:
             print("Ошибка получения теста у контроллеров")
             self.status = "failed_to_be_cooked"
         # запускает метод списать п\ф
-        return self.result
+        return self.status
 
-    async def control_dough_position(self, current_destination):
+    async def control_dough_position(self, *args):
         """отдаем команду на поправление теста"""
-        print("поправляем тесто")
-
-        launch_params = {"name": "get_dough",
+        atomic_params = {"name": "get_dough",
                          "place": self.dough.halfstuff_cell}
-        self.result = await RA.atomic_action(**launch_params)
-        if self.result:
-            print("успешно поправили тесто")
-            await self.move_to_cut_station(current_destination)
-        else:
-            print("Ошибка поправления теста")
-            self.status = "failed_to_be_cooked"
-        return self.result
+        self.status = await self.atomic_chain_execute(atomic_params)
+        return self.status
 
-    async def move_to_cut_station(self, current_destination):
-        """отдает команду на движение от станции теста на станцию нарезки"""
-        print("едем к станции нарезки")
-
-        current_destination = current_destination
-        forward_destination = self.CUT_STATION_ID
-
-        duration = await RA.calculate_time(current_destination, forward_destination)
-
-        self.result = await RA.position_move(forward_destination, duration)
-        if self.result:
-            print("успешно доехали до станции нарезки")
-            await self.leave_vane_at_cut_station(forward_destination)
-        else:
-            print("Не доехали до станции нарезки")
-            self.status = "failed_to_be_cooked"
-        return self.result
-
-    async def leave_vane_at_cut_station(self, current_destination):
-        print("Отцепляем лопатку на станции нарезки")
-
-        launch_params = {"name": "leave_vane_at_cut_station",
+    async def leave_vane_in_cut_station(self, *args):
+        """отдаем команду оставить лопатку в станции нарезки"""
+        atomic_params = {"name": "leave_vane_at_cut_station",
                          "place": self.CUT_STATION_ID}
+        self.status = await self.atomic_chain_execute(atomic_params)
+        return self.status
 
-        self.result = await RA.atomic_action(**launch_params)
-        if self.result:
-            print("успешно лопатка в станции нарезки")
-        else:
-            print("Ошибка: лопатка не в станции нарезки")
-            self.status = "failed_to_be_cooked"
-        return self.result
-
-    async def get_dough(self):
-        print("Начинается chain Возьми тесто")
-        self.result = await self.move_to_oven()
-        print(f"Chain возьми тесто заказа is over", self.result, time.time())
-        if self.result:
-            sauce_task = asyncio.create_task(GetSauce.get_sauce(self))
-        return self.result
-
-    async def calculate_chain_time(self, destination, destination_to):
-        """Этот метод запрашивает время доезда от-до печи, до станции теста """
-        pass
-
-
-# class GetDough(ConfigMixin):
-#     """This class represents what should be done to take a vane from oven and get a dough to cut station"""
-#
-#     def __init__(self):
-#         super().__init__()
-#         self.duration = 30
-#         self.result = False
-#
-#     async def move_to_oven(self):
-#         """Эта функция описывает движение до назначенной печи. Исполнитель - RBA."""
-#
-#         current_destination = await RA.get_current_location()
-#         forward_destination = self.oven_unit
-#
-#         duration = await RA.calculate_time(current_destination, forward_destination)
-#
-#         self.result = await RA.move_to_position(forward_destination, duration)
-#         if self.result:
-#             print("RBA успешно подъехал к печи")
-#             await self.get_vane_from_oven(current_destination=forward_destination)
-#         else:
-#             print("Ошибка подъезда")
-#             self.status = "failed_to_be_cooked"
-#         return self.result
-#
-#     async def get_vane_from_oven(self, current_destination):
-#         """Этот метод запускает группу атомарных действий RA по захвату лопатки из печи"""
-#         CHAIN_ID = 2
-#
-#         launch_params = {"name": "get_vane_from_oven",
-#                          "place": self.oven_unit}
-#
-#         self.result = await RA.atomic(**launch_params)
-#         if self.result:
-#             print("RBA взял лопатку")
-#             await self.move_to_dough_station(current_destination)
-#         else:
-#             print("Ошибка взятия лопатки")
-#             self.status = "failed_to_be_cooked"
-#         return self.result
-#
-#     async def move_to_dough_station(self, current_destination):
-#         """Запускает движение к станции теста"""
-#
-#         current_destination = current_destination
-#         forward_destination = self.dough.halfstuff_cell
-#
-#         duration = await RA.calculate_time(current_destination, forward_destination)
-#
-#         print("поехали к станции теста")
-#         self.result = await RA.move_to_position(forward_destination, duration)
-#
-#         if self.result:
-#             print("приехали к станции теста")
-#             await self.controllers_get_dough(current_destination=forward_destination)
-#         else:
-#             print("ошибка подъезда на станцию теста")
-#             self.status = "failed_to_be_cooked"
-#         return self.result
-#
-#     async def controllers_get_dough(self, current_destination):
-#         """отдает команду контролеру получить тесто"""
-#
-#         print("берем тесто у контрллеров")
-#         dough_point = self.dough.halfstuff_cell
-#         self.result = await Controllers.give_dough(dough_point)
-#         if self.result:
-#             print("взяли тесто у контроллеров")
-#             await self.control_dough_position(current_destination)
-#         else:
-#             print("Ошибка получения теста у контроллеров")
-#             self.status = "failed_to_be_cooked"
-#         # запускает метод списать п\ф
-#         return self.result
-#
-#     async def control_dough_position(self, current_destination):
-#         """отдаем команду на поправление теста"""
-#         print("поправляем тесто")
-#
-#         launch_params = {"name": "get_dough",
-#                          "place": self.dough.halfstuff_cell}
-#         self.result = await RA.atomic(**launch_params)
-#         if self.result:
-#             print("успешно поправили тесто")
-#             await self.move_to_cut_station(current_destination)
-#         else:
-#             print("Ошибка поправления теста")
-#             self.status = "failed_to_be_cooked"
-#         return self.result
-#
-#     async def move_to_cut_station(self, current_destination):
-#         """отдает команду на движение от станции теста на станцию нарезки"""
-#         print("едем к станции нарезки")
-#
-#         current_destination = current_destination
-#         forward_destination = self.CUT_STATION_ID
-#
-#         duration = await RA.calculate_time(current_destination, forward_destination)
-#
-#         self.result = await RA.move_to_position(forward_destination, duration)
-#         if self.result:
-#             print("успешно доехали до станции нарезки")
-#             await self.leave_vane_at_cut_station(forward_destination)
-#         else:
-#             print("Не доехали до станции нарезки")
-#             self.status = "failed_to_be_cooked"
-#         return self.result
-#
-#     async def leave_vane_at_cut_station(self, current_destination):
-#         print("Отцепляем лопатку на станции нарезки")
-#
-#         launch_params = {"name": "leave_vane_at_cut_station",
-#                          "place": self.CUT_STATION_ID}
-#
-#         self.result = await RA.atomic(**launch_params)
-#         if self.result:
-#             print("успешно лопатка в станции нарезки")
-#         else:
-#             print("Ошибка: лопатка не в станции нарезки")
-#             self.status = "failed_to_be_cooked"
-#         return self.result
-#
-#     async def get_dough(self):
-#         print("Начинается chain Возьми тесто")
-#         self.result = await self.move_to_oven()
-#         print(f"Chain возьми тесто заказа is over", self.result, time.time())
-#         if self.result:
-#             sauce_task = asyncio.create_task(GetSauce.get_sauce(self))
-#         return self.result
-#
-#     async def calculate_chain_time(self, destination, destination_to):
-#         """Этот метод запрашивает время доезда от-до печи, до станции теста """
-#         pass
-
-
-class GetSauce(object):
-    """В этом классе описаны действия по добавлению соуса. """
-
-    async def get_sauce(self):
+    async def give_sauce(self):
+        """Вызов метода контроллеров для поливания соусом"""
         print("Начинаем поливать соусом", time.time())
-        # self.is_cut_station_ready = False
         recipe = self.sauce.sauce_cell
         print("Данные об ячейке", recipe)
         print("Время начала поливки соусом контроллерами", time.time())
@@ -298,18 +125,33 @@ class GetSauce(object):
         if result:
             print("успешно полили соусом")
             self.is_cut_station_free.set()
-            # self.is_cut_station_ready = True
         else:
             print("Не успешно полили соусом")
             self.status = "failed_to_be_cooked"
         return self.result
 
-    # async def start_sauce(self):
-    #     futura = asyncio.ensure_future(GetDough.get_dough(self))
-    #     self.result = await futura
-    #     if self.result:
-    #         self.result = await self.get_sauce()
-    #     return self.result
+    async def chain_get_dough_and_sauce(self):
+        """Подумать как разделить на 2 части"""
+        print("Начинается chain Возьми тесто")
+        self.status = self.status_change("cooking")
+        chain_list = [(self.move_to_object, self.oven_unit),
+                      (self.get_vane_from_oven, None),
+                      (self.move_to_object, self.CUT_STATION_ID),
+                      (self.controllers_get_dough, None),
+                      (self.control_dough_position, None),
+                      (self.move_to_object, self.CUT_STATION_ID),
+                      (self.leave_vane_in_cut_station, None),
+                      ]
+        try:
+            for chain in chain_list:
+                if self.status != "failed_to_be_cooked":
+                    chain, params = chain
+                    self.status = await chain(params)
+                else:
+                    break
+            self.status = asyncio.create_task(self.give_sauce())
+        except RAError:
+            print("Ошибка века")
 
 
 class Filling(ConfigMixin):
@@ -448,13 +290,6 @@ class Baking(ConfigMixin):
         """Добавтим лопатку в печь"""
         pass
 
-    # async def start_baking(self):
-    #     """Запускает выпечку """
-    #     print("начинаем печь", time.time())
-    #     time_changes_request = asyncio.get_running_loop().create_future()
-    #
-    #     pass
-
     async def evaluate_baking_time(self):
         """Запускаем метод посчитай время выпечки
         возвращает словарь {oven_id: unix_time} для всех печей, время которых изменилось (и запрошенной тоже)
@@ -491,12 +326,6 @@ class Baking(ConfigMixin):
         print("Это результат выпечки", time.time(), baking_results)
         print("Выпечка зарешена", time.time())
         return baking_results
-
-
-class Recipy(GetDough, GetSauce, Filling):
-
-    def __init__(self):
-        super().__init__()
 
 
 class MakeCrust(ConfigMixin):

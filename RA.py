@@ -16,10 +16,10 @@ class Movement(object):
 
     @staticmethod
     async def movement(n):
-        print("Запустилась работа робота")
+        print("RA начал работу")
         await asyncio.sleep(n)
         result = random.choice([True, True])
-        print("Работа робота завершена")
+        print("Работа RA завершена")
         return result
 
 
@@ -35,7 +35,8 @@ class RA(Movement):
            to_place: srt
         :return: possible_duration (list[int])
         """
-        result_choice = random.choice([[9, 15, 16, 8, 10], []])
+        result_choice = random.choice([[9, 15, 16, 8, 10], [9, 15, 16, 8, 10], [9, 15, 16, 8, 10], []])
+        print(result_choice)
         return result_choice
 
     @classmethod
@@ -47,7 +48,7 @@ class RA(Movement):
                  raiseError if not
                  # нужно определить типы ошибок
         """
-        print("RBA двигается к печи", place)
+        print(f"RA двигается к {place} за {duration} сек")
         result = await cls.movement(duration)
         if result:
             return duration
@@ -55,14 +56,15 @@ class RA(Movement):
             raise RAError
 
     @classmethod
-    async def get_atomic_action_time(clx, name="get_vane_from_oven", place="oven 17"):
+    async def get_atomic_action_time(clx, **kwargs):
         """
         :param name: имя пакета атомарных действий, str
         :param place: id оборудования
         :return: int если успешно
         :raise RAError
         """
-        pass
+        print("Атомарное действие", kwargs["name"])
+        return random.randint(1,10)
 
     @classmethod
     async def atomic_action(cls, **kwargs):
