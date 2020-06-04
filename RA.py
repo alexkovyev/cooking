@@ -16,10 +16,10 @@ class Movement(object):
 
     @staticmethod
     async def movement(n):
-        print("RA начал работу")
+        print("__ RA начал работу")
         await asyncio.sleep(n)
         result = random.choice([True, True])
-        print("Работа RA завершена")
+        print("__ Работа RA завершена")
         return result
 
 
@@ -35,8 +35,7 @@ class RA(Movement):
            to_place: srt
         :return: possible_duration (list[int])
         """
-        result_choice = random.choice([[9, 15, 16, 8, 10], [9, 15, 16, 8, 10], [9, 15, 16, 8, 10], []])
-        print(result_choice)
+        result_choice = random.choice([[5, 6, 9, 2, 1], [4, 5, 6, 8, 10], [9, 5, 6, 3, 1]])
         return result_choice
 
     @classmethod
@@ -48,8 +47,9 @@ class RA(Movement):
                  raiseError if not
                  # нужно определить типы ошибок
         """
-        print(f"RA двигается к {place} за {duration} сек")
+        print(f"RA двигается к {place} за {duration} сек", time.time())
         result = await cls.movement(duration)
+        print("RA доехал", time.time())
         if result:
             return duration
         else:
@@ -81,15 +81,17 @@ class RA(Movement):
         await asyncio.sleep(1)
 
     @classmethod
+    async def dance_for_time(cls, duration):
+        print("Танцуем экстра", time.time())
+        await asyncio.sleep(duration)
+
+    @classmethod
     async def get_current_position(cls):
         """Возвращает текущее местоположение RA"""
         return "oven 1"
 
     @classmethod
     async def get_current_gripper(cls):
-        return
+        gripper_options = ["product", None]
+        return random.choice(gripper_options)
 
-    @classmethod
-    async def is_capture_is_gripper(cls):
-        """Проверяет является ли текущий захват гриппером"""
-        return random.choice([False, False, False])

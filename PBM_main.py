@@ -145,7 +145,8 @@ class PizzaBotMain(object):
             dish["filling"]["chain"] = self.recipes["filling"][filling_id]["chain"]
             halfstaff_content = dish["filling"]["content"]
             cutting_program = self.recipes["filling"][filling_id]["cutting_program"]
-            dish["filling"]["content"] = tuple(zip(halfstaff_content, cutting_program))
+            # dish["filling"]["content"] = tuple(zip(halfstaff_content, cutting_program))
+            dish["filling"]["content"] = [list(_) for _ in (zip(halfstaff_content, cutting_program))]
             print("Составили рецепт начинки", dish["filling"])
 
         for dish in new_order.values():
@@ -271,10 +272,16 @@ class PizzaBotMain(object):
                     await self.delivety_queue.get()
                     await asyncio.sleep(5)
                 elif not self.main_queue.empty():
-                    print("Готовим блюдо")
+                    print("Вернулись в очередь main")
                     dish, chain_to_do = await self.main_queue.get()
                     if dish.status != "failed_to_be_cooked":
-                        await chain_to_do(dish)
+                        print("Готовим блюдо", dish.id)
+                        if isinstance(chain_to_do, tuple):
+                            chain, params = chain_to_do
+                            _, cutting_program, storage_adress = params
+                            await chain(dish, storage_adress, cutting_program)
+                        else:
+                            await chain_to_do(dish)
                     else:
                         continue
 

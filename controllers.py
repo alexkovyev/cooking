@@ -81,7 +81,7 @@ async def event_generator(cntrls_events):
         my_choice = random.randint(0, 2)
         what_happened = options[my_choice]
         await what_happened(cntrls_events)
-        n = random.randint(20, 40)
+        n = random.randint(60, 140)
         print(f"Trouble-maker засыпает на {n} сек в {time.time()}")
         await asyncio.sleep(n)
         print("Trouble-maker снова с нами", time.time())
@@ -93,11 +93,11 @@ class Movement(object):
 
     @staticmethod
     async def movement(*args):
-        n = random.randint(2, 20)
+        n = random.randint(20, 40)
         print("-- Время работы", n)
         print("-- Запустилась работа метода контроллеров")
         await asyncio.sleep(n)
-        result = random.choice([True, False, True])
+        result = random.choice([True, True, True])
         print("-- Метод контроллеров завершен")
         return result
 

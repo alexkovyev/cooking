@@ -154,33 +154,14 @@ class BaseDish(Recipy):
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         # self.pickup_point_unit: int
 
-
-    def halfstuff_cell_evaluation(self):
-        """Эта группа фнукций запускает процедуру назначения пф и назначает ячейку для каждого пф."""
-        # result = do_some_great_db_procedure
-        # unpack_results если нужно
-        # self.dough.halfstuff_cell = result[0]
-        # self.sauce.halfstuff_cell = result[0]
-        # self.sauce.halfstuff_cell = result[1]
-        # self.filling = None
-        # self.additive.halfstuff_cell = result[3]
-        pass
-
     def recipe_chain_creation(self):
         chain_list = []
         chain_list.append(Recipy.chain_get_dough_and_sauce)
-        # for filling_item in self.filling.filling_content:
-        #     self.chain_list.append(Recipy.start_filling)
-        #     self.chain_list.append(Recipy.cut_the_product)
-        return chain_list
+        filling_chain = []
+        for filling_item in self.filling.filling_content:
+            filling_chain.append((Recipy.get_filling_chain, filling_item))
+        return chain_list+filling_chain
 
-    # def recipe_chain_creation(self):
-    #     chain_list = []
-    #     self.chain_list.append(Recipy.get_dough)
-    #     for filling_item in self.filling.filling_content:
-    #         self.chain_list.append(Recipy.start_filling)
-    #         self.chain_list.append(Recipy.cut_the_product)
-    #     return chain_list
 
     def status_change(self, new_status):
         """Метод меняет статус блюда.
@@ -254,16 +235,25 @@ class BaseSauce(BasePizzaPart):
 
 class BaseFilling(object):
     """Этот класс содержит информацию о начинке.
-    filling_data["content"] сеодержит кортеж котрежей.
-    Вложенный кортеж - (halfstaff_id, cutting_program)
+    filling_data["content"] содержит кортеж котреж словарей
+    Вложенный словарь содержит информцию об id_пф и словарь для нарезки
+    (halfstaff_id, {"cutting_program_id":str, "duration": int})
     """
 
     def __init__(self, filling_data):
         self.filling_id = filling_data["id"]
         self.filling_content = filling_data["content"]
-        # тут хранится словарь? с перечнем ингредиентов и кол-вом по рецепту
-        self.filling_halfstuffs = {"halfstuff_1": ("расположение", "тип нарезки"),
-                                   "halfstuff_2": ("расположение", "тип нарезки")}
+        self.cell_data_unpack()
+
+    def cell_data_unpack(self):
+        """Элемент списка начинки выглядит вот так, последний элемент - это место хранения
+        [6, {'program_id': 2, 'duration': 10}, ('d4', (3, 4))]"""
+        input_data = (
+                      ("d4", (3,4)), ("a4", (3,4)), ("t4", (3,4)),
+                      ("b4", (1,1)), ("a4", (1,1)), ("c4", (2,1))
+                      )
+
+        self.filling_content = [item + [value] for item, value in zip(self.filling_content, input_data)]
 
     def __repr__(self):
         return f"Начинка {self.filling_id}"
@@ -279,41 +269,3 @@ class BaseAdditive(BasePizzaPart):
     def __repr__(self):
         return f"Добавка {self.halfstuff_id}"
 
-#
-# class BaseDish(Recipy):
-#     """Этот класс представляет собой шаблон блюда в заказе."""
-#     DISH_STATUSES = ["received", "cooking", "failed_to_cook", "ready", "packed"]
-#
-#     def __init__(self, dish_data, free_oven_id, index):
-#         super().__init__()
-#         # создаем уникальное имя блюда
-#         self.id = f"{index}{round(time.time() * 1000)}"
-#         # распаковываем данные о том, из чего состоит блюдо
-#         dough_id, sauce_id, filling_id, additive_id = dish_data
-#         self.dough = BaseDough(halfstuff_id=dough_id)
-#         self.sauce = BaseSauce(halfstuff_id=sauce_id)
-#         self.filling = filling_id
-#         self.additive = BaseAdditive(halfstuff_id=additive_id)
-#
-#         self.oven_unit = free_oven_id
-#         self.status = "received"
-#         # self.chain_list = [self.get_dough(self.id, self.oven_unit, 6)]
-#         self.time_starting_baking = None
-#         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
-#         # self.pickup_point_unit: int
-#         self.plan_duration = sum([self.dough.dough_plan_duration, self.sauce.sauce_plan_duration])
-#
-#     def halfstuff_cell_evaluation(self):
-#         """Эта группа фнукций запускает процедуру назначения пф и назначает ячейку для каждого пф."""
-#         # result = do_some_great_db_procedure
-#         # unpack_results если нужно
-#         # self.dough.halfstuff_cell = result[0]
-#         # self.sauce.halfstuff_cell = result[0]
-#         # self.sauce.halfstuff_cell = result[1]
-#         # self.filling = None
-#         # self.additive.halfstuff_cell = result[3]
-#         pass
-#
-#     def __repr__(self):
-#         return f"Блюдо {self.id} состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  " \
-#                f"\"Зарезервирована печь\" {self.oven_unit} Статус {self.status}"
