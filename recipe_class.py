@@ -18,10 +18,13 @@ class Recipy(ConfigMixin):
     """Основной класс рецепта, содержит все действия по приготовлению блюда"""
 
     def __init__(self):
+        # по умолчанию значение False.
+        # Меняется на False:
+        # - лопатка приезжает в станцию нарезки
+        # - поливаем соусом
+        # - нарезаем п-ф
         self.is_cut_station_free = asyncio.Event()
         self.time_limit = None
-        self.use_limit = False
-
 
     async def get_move_chain_duration(self, place_to):
         """ Метод получает варианты длительности передвижения, выбирает тот, который
@@ -50,22 +53,26 @@ class Recipy(ConfigMixin):
             raise RAError
         return duration
 
-    @staticmethod
-    async def is_need_to_change_gripper(required_gripper: str):
-        """метод проверяет Нужно ли менять захват
-        """
-        current_gripper = await RA.get_current_gripper()
-        if str(current_gripper) != required_gripper:
-            return True
-        return False
+    async def chain_execute(self, chain_list):
+        try:
+            for chain in chain_list:
+                if self.status != "failed_to_be_cooked":
+                    chain, params = chain
+                    self.status = await chain(params)
+                else:
+                    break
+        except RAError:
+            self.status = "failed_to_be_cooked"
+            print("Ошибка века")
 
-    async def change_gripper(self, required_gripper: str):
-        print("Проверяем, нужно ли менять захват")
-
-        is_need_to_change_gripper = await self.is_need_to_change_gripper(required_gripper)
-        if is_need_to_change_gripper:
-            await self.move_to_object((self.CAPTURE_STATION, None))
-            await self.atomic_chain_execute({"place":"get_gripper", "name":"get_gripper"})
+    async def atomic_chain_execute(self, atomic_params_dict):
+        duration = await self.get_atomic_chain_duration(atomic_params_dict)
+        try:
+            await RA.atomic_action(**atomic_params_dict)
+            print("Успешно выполнили атомарное действие")
+        except RAError:
+            self.status = "failed_to_be_cooked"
+            print("Ошибка атомарного действия")
         return self.status
 
     async def move_to_object(self, move_params):
@@ -100,14 +107,22 @@ class Recipy(ConfigMixin):
             # что деламем? сворачиваем работу или продолжаем дальше
         return self.status
 
-    async def atomic_chain_execute(self, atomic_params_dict):
-        duration = await self.get_atomic_chain_duration(atomic_params_dict)
-        try:
-            await RA.atomic_action(**atomic_params_dict)
-            print("Успешно выполнили атомарное действие")
-        except RAError:
-            self.status = "failed_to_be_cooked"
-            print("Ошибка атомарного действия")
+    @staticmethod
+    async def is_need_to_change_gripper(required_gripper: str):
+        """метод проверяет Нужно ли менять захват
+        """
+        current_gripper = await RA.get_current_gripper()
+        if str(current_gripper) != required_gripper:
+            return True
+        return False
+
+    async def change_gripper(self, required_gripper: str):
+        print("Проверяем, нужно ли менять захват")
+
+        is_need_to_change_gripper = await self.is_need_to_change_gripper(required_gripper)
+        if is_need_to_change_gripper:
+            await self.move_to_object((self.CAPTURE_STATION, None))
+            await self.atomic_chain_execute({"place":"get_gripper", "name":"get_gripper"})
         return self.status
 
     async def get_vane_from_oven(self, *args):
@@ -144,19 +159,7 @@ class Recipy(ConfigMixin):
         self.status = await self.atomic_chain_execute(atomic_params)
         return self.status
 
-    async def chain_execute(self, chain_list):
-        try:
-            for chain in chain_list:
-                if self.status != "failed_to_be_cooked":
-                    chain, params = chain
-                    self.status = await chain(params)
-                else:
-                    break
-        except RAError:
-            self.status = "failed_to_be_cooked"
-            print("Ошибка века")
-
-    async def give_sauce(self):
+    async def controllers_give_sauce(self):
         """Вызов метода контроллеров для поливания соусом"""
         print("Начинаем поливать соусом", time.time())
         recipe = self.sauce.sauce_cell
@@ -193,6 +196,15 @@ class Recipy(ConfigMixin):
         await self.chain_execute(what_to_do)
         print("Закончили с ингредиентом начинки", self.status)
 
+    async def put_half_staff_in_cut_station(self, *args):
+        """Этот метод опускает п-ф в станцию нарезки"""
+        print("Начинаем размещать продукт в станции нарезки", time.time())
+        atomic_params = {
+            "name":"set_product",
+            "place": self.CUT_STATION_ID
+        }
+        self.status = await self.atomic_chain_execute(atomic_params)
+
     async def cut_half_staff(self, cutting_program):
         print("Начинаем этап порежь продукт", time.time())
         duration = cutting_program["duration"]
@@ -203,7 +215,7 @@ class Recipy(ConfigMixin):
             print("успешно нарезали п\ф")
             self.is_cut_station_free.set()
             self.time_limit = None
-            print("СНЯТ временой ЛИМИТ")
+            print("СНЯТ временой ЛИМИТ", time.time())
         else:
             print("---!!! Не успешно нарезали п\ф")
             self.status = "failed_to_be_cooked"
@@ -224,7 +236,7 @@ class Recipy(ConfigMixin):
         await self.chain_execute(chain_list)
         print("Закончили с тестом",time.time(), self.status)
         if self.status != "failed_to_be_cooked":
-            asyncio.create_task(self.give_sauce())
+            asyncio.create_task(self.controllers_give_sauce())
         return self.status
 
     async def get_filling_chain(self, storage_adress, cutting_program):
@@ -235,6 +247,7 @@ class Recipy(ConfigMixin):
         # print("Это программа нарезки", cutting_program)
         chain_list = [(self.change_gripper, "product"),
                       (self.bring_half_staff, storage_adress),
+                      (self.put_half_staff_in_cut_station, None),
         ]
         await self.chain_execute(chain_list)
         if self.status != "failed_to_be_cooked":
