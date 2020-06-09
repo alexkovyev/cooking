@@ -6,6 +6,8 @@ from RA import RA
 from RA import RAError
 from controllers import Controllers
 
+from settings import OVEN_LIQUIDATION_TIME
+
 
 class ConfigMixin(object):
     """Временное хранение идентификаторов оборудования"""
@@ -44,7 +46,6 @@ class Recipy(ConfigMixin):
     @staticmethod
     async def get_atomic_chain_duration(atomic_info):
         """
-
         :param atomic_info:
         :return:
         """
@@ -237,6 +238,7 @@ class Recipy(ConfigMixin):
         print("Закончили с тестом",time.time(), self.status)
         if self.status != "failed_to_be_cooked":
             asyncio.create_task(self.controllers_give_sauce())
+        await self.set_oven_timer()
         return self.status
 
     async def get_filling_chain(self, storage_adress, cutting_program):
@@ -255,6 +257,29 @@ class Recipy(ConfigMixin):
             print("УСТАНОВЛЕН лимит времени", time.time())
             asyncio.create_task(self.cut_half_staff(cutting_program))
         return self.status
+
+    async def dish_liquidation(self, *args):
+        print("!!!!!!!! Ликвидируем блюдо", time.time())
+        return "ОК"
+
+    async def set_oven_timer(self):
+        print("!!!!!!!!!!ставим таймер на печь", time.time())
+        oven_future = asyncio.get_running_loop().create_future()
+        # oven_future.add_done_callback(self.dish_liquidation)
+        self.oven_future = oven_future
+        print("Это футура в заказе", self.oven_future)
+        await asyncio.create_task(self.oven_timer())
+
+    async def oven_timer(self):
+        print("!!!!!!!!!!!!Начинаем ждать выдачи час", time.time())
+        await asyncio.sleep(OVEN_LIQUIDATION_TIME)
+        print("!!!!!!!!!!! время сна завершено",time.time())
+        if not self.oven_future.cancelled():
+            print("!!!!!!!!!!!!!!Футура блюдо не забрали")
+            self.oven_future.set_result("time is over")
+            await self.dish_liquidation()
+
+
 
 
 class Baking(ConfigMixin):

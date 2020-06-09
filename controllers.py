@@ -14,7 +14,9 @@ from pydispatch import Dispatcher
    - start_baking Предлагаю объединить с turn_oven_heating_on, при прогреве 
    в качве baking_program указать id программы прогрева
    
-   Методы упаковки и выдачи заказа еще не готовы 
+   - give_paper
+   - inform_order_is_delivered
+   - send_message_qr
 """
 
 
@@ -62,6 +64,7 @@ async def event_generator(cntrls_events):
         или будет еще тип: "oven", "cut_station", те {"equipment_type": cut_station,
                                                       "uuid": o48932492834281,
                                                        "status": "broken"}
+        Приходят только уведомления о поломке, возобнавление работы через "оператора и перезагрузку"
         """
         print("Сработало событие поломка печи", time.time())
         cntrls_events.hardware_status_changed('21', 'broken')
@@ -168,3 +171,27 @@ class Controllers(Movement):
         result = await cls.movement()
         print("контроллеры закончили печь", time.time())
         return result
+
+    @classmethod
+    async def give_paper(cls):
+        """Метод выдает бумагу в станции упаковки
+        без параметров) """
+        print("Выдаем упаковку", time.time())
+        result = await cls.movement()
+        print("контроллеры закончили выдавать бумагу", time.time())
+        return
+
+    @classmethod
+    async def inform_order_is_delivered(cls, pick_up_point):
+        """Метод информирует контроллеры о том, что заказ доставлен в ячейку выдачи
+        Вопрос: что нужно передать в метод"""
+        print("Сообщаем, что пицца в станции упаковки")
+        return True
+
+    @classmethod
+    async def send_message_qr(cls, message):
+        """Метод отправляет сообщение о готовности заказа
+        Вопрос: Что должно быть в сообщении """
+        print("Отправляем сообщение о запросе QR-кода")
+        return True
+

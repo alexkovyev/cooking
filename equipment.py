@@ -5,7 +5,8 @@ class Equipment(object):
     """Этот класс собирает информацию о оборудовании в текущий день
     Так выглядит информация о печах {12: {"oven_id": 12, "status": "free"},
                                     23: {"oven_id": 23, "status": "reserved", "dish": 213},
-                                    1: {"oven_id": 1, "status": "occupied", "dish": 323}}
+                                    1: {"oven_id": 1, "status": "occupied", "dish": 323,
+                                       "limit      }}
     oven_id:{}, во вложенном словаре oven_id нужен для функции fetch_free_oven
     """
     OVEN_STATUSES = ["broken", "not_available", "free", "reserved", "occupied"]
@@ -22,17 +23,17 @@ class Equipment(object):
         free_oven = [oven for oven in self.oven_available.values() if oven["status"] == "free"]
         return free_oven
 
-    def is_able_to_cook(self):
-        """Определяет, можно ли готовить на основе того, исправно ли оборудование
-        учитывает ли это, сколько печей свободно и если их 0.
-        Если у нас 1 работающая печь киоск все равно работает, или нет?"""
-        operate_oven_qt = self.fetch_free_oven_list()
-        # как то проверяем, работают ли узлы выдачи
-        equipment_status = True if self.is_cut_station_ok and \
-                                   self.is_package_station_ok and \
-                                   len(operate_oven_qt) > 1 \
-            else False
-        return equipment_status
+    # def is_able_to_cook(self):
+    #     """Определяет, можно ли готовить на основе того, исправно ли оборудование
+    #     учитывает ли это, сколько печей свободно и если их 0.
+    #     Если у нас 1 работающая печь киоск все равно работает, или нет?"""
+    #     operate_oven_qt = self.fetch_free_oven_list()
+    #     # как то проверяем, работают ли узлы выдачи
+    #     equipment_status = True if self.is_cut_station_ok and \
+    #                                self.is_package_station_ok and \
+    #                                len(operate_oven_qt) > 1 \
+    #         else False
+    #     return equipment_status
 
     def get_first_free_oven(self):
         """Этот метод получает id печи, котрая последняя в списке свободных"""
