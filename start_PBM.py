@@ -30,7 +30,6 @@ def start(equipment_data, recipes):
     """Эта функция инициирует все необходимое для работы. Пока создание экземпляра класса TodaysOrders
     Добавить создание event-loop и инициацию класса контролеры"""
     today_orders = PizzaBotMain(equipment_data, recipes)
-    print("Начинается код start cooking")
     app = create_server()
     app["today_orders"] = today_orders
     asyncio.run(create_tasks(app, today_orders, cntrls_events))

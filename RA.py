@@ -84,6 +84,7 @@ class RA(Movement):
     async def dance_for_time(cls, duration):
         print("Танцуем экстра", time.time())
         await asyncio.sleep(duration)
+        return True
 
     @classmethod
     async def get_current_position(cls):

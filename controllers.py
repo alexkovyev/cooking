@@ -97,8 +97,7 @@ class Movement(object):
     @staticmethod
     async def movement(*args):
         n = random.randint(20, 40)
-        print("-- Время работы", n)
-        print("-- Запустилась работа метода контроллеров")
+        print("-- Время работы контроллеров", n)
         await asyncio.sleep(n)
         result = random.choice([True, True, True])
         print("-- Метод контроллеров завершен")
@@ -139,29 +138,18 @@ class Controllers(Movement):
         result = await cls.movement()
         return result
 
-    # @classmethod
-    # async def turn_oven_heating_on(cls, oven_id, time_changes_request):
-    #     """Метод запускает прогрев печи перед выпечкой и корочкообразовании.
-    #     Алексей утверждает, что это осуществляется по 1 программе (то есть время, режимы нагрева
-    #     и температура) одинакова для любого рецепта \ этапа.
-    #     time_changes_request добавлен по иницитиве Арсения для обеспечения единообразия интерфейсов
-    #     :param oven_id: uuid4 str
-    #            time_changes_request: futura object
-    #     :return futura_object returns dict {oven_id: unix_time} для всех печей, время которых изменилось
-    #             result: bool
-    #     """
-    #     print("Включили нагрев печи", oven_id)
-    #     result = await cls.movement()
-    #     return result
-
     @classmethod
     async def start_baking(cls, oven_unit, oven_mode, program, time_changes_requset):
         """Запускает выпечку в конкртеной печи
         :param oven_unit: uuid4
-               baking_program: int
+               oven_mode: str
+               program: int
                time_changes_request: futura object
-        ВОПРОС: нужно ли указывать тип операции (корочкообразование или выпечка? или просто номер программы),
-                так как программы корочки и выпечки могут сопасть по цифрам или не нужно и просто номер?
+        oven_mode options:
+        - "pre_heating"
+        - "baking"
+        - "stand_by"
+        - "make_crust"
         :return
                sets data in time_changes_request {oven_id: unix_time} для всех печей, время которых изменилось
                result: bool or raise OvenError

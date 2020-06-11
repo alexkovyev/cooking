@@ -149,21 +149,20 @@ class BaseDish(Recipy):
         self.status = "received"
         self.chain_list = self.recipe_chain_creation()
         self.baking_program = dish_data["filling"]["cooking_program"]
-        self.heating_program = dish_data["filling"]["heating_program"]
+        self.make_crust_program = dish_data["filling"]["make_crust_program"]
         self.pre_heating_program = dish_data["filling"]["pre_heating_program"]
-        self.stand_by_mode = dish_data["filling"]["stand_by_mode"]
+        self.stand_by = dish_data["filling"]["stand_by"]
         self.oven_future = None
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         # self.pickup_point_unit: int
 
     def recipe_chain_creation(self):
-        chain_list = []
-        chain_list.append(Recipy.chain_get_dough_and_sauce)
-        filling_chain = []
+        chain_list = [Recipy.chain_get_dough_and_sauce]
         for filling_item in self.filling.filling_content:
-            filling_chain.append((Recipy.get_filling_chain, filling_item))
-        return chain_list+filling_chain
-
+            # filling_item = ['tomato', {'program_id': 2, 'duration': 30}, ('d4', (3, 4))]
+            chain_list.append((Recipy.get_filling_chain, filling_item))
+        chain_list.append(Recipy.bring_vane_to_oven)
+        return chain_list
 
     def status_change(self, new_status):
         """Метод меняет статус блюда.
@@ -249,7 +248,8 @@ class BaseFilling(object):
 
     def cell_data_unpack(self):
         """Элемент списка начинки выглядит вот так, последний элемент - это место хранения
-        [6, {'program_id': 2, 'duration': 10}, ('d4', (3, 4))]"""
+        [tomato, {'program_id': 2, 'duration': 10}, ('d4', (3, 4))]"""
+        # место хранения в холодьнике
         input_data = (
                       ("d4", (3,4)), ("a4", (3,4)), ("t4", (3,4)),
                       ("b4", (1,1)), ("a4", (1,1)), ("c4", (2,1))

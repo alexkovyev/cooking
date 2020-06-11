@@ -59,14 +59,14 @@ class PizzaBotMain(object):
             {
                 "dough": {"id": 2},
                 "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
-                "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
+                "filling": {"id": 1, "content": ("tomato", "cheese", "ham", "olive", "pepper", "bacon")},
                 "additive": {"id": 7}
             },
             "6327ade2-9f31-11ea-bb37-0242ac130002":
                 {
                     "dough": {"id": 1},
                     "sauce": {"id": 2, "content": ((1, 5), (2, 25))},
-                    "filling": {"id": 1, "content": (6, 2, 3, 3, 6, 8)},
+                    "filling": {"id": 1, "content": ("tomato", "cheese", "ham", "olive", "pepper", "bacon")},
                     "additive": {"id": 1}
                 }
         })
@@ -103,7 +103,7 @@ class PizzaBotMain(object):
         'content': ((6, {'program_id': 2, 'duration': 10}), (2, {'program_id': 1, 'duration': 12}),
         (3, {'program_id': 5, 'duration': 15}), (3, {'program_id': 8, 'duration': 8}),
         (6, {'program_id': 4, 'duration': 17}), (8, {'program_id': 9, 'duration': 9})),
-        'cooking_program': (2, 180), 'heating_program': (2, 20), 'chain': {}},
+        'cooking_program': (2, 180), 'make_crust_program': (2, 20), 'chain': {}},
 
         'additive': {'id': 7, 'recipe': {1: 5}}},
 
@@ -121,7 +121,7 @@ class PizzaBotMain(object):
         (2, {'program_id': 1, 'duration': 12}), (3, {'program_id': 5, 'duration': 15}),
         (3, {'program_id': 8, 'duration': 8}), (6, {'program_id': 4, 'duration': 17}),
         (8, {'program_id': 9, 'duration': 9})),
-        'cooking_program': (1, 180), 'heating_program': (1, 20), 'chain': {}},
+        'cooking_program': (1, 180), 'make_crust_program': (1, 20), 'chain': {}},
 
         'additive': {'id': 1, 'recipe': {1: 5}}}]}
 """
@@ -134,16 +134,16 @@ class PizzaBotMain(object):
             dish["sauce"]["recipe"] = self.recipes["sauce"][sauce_id]
             for component, my_tuple in zip(dish["sauce"]["recipe"]["content"], dish["sauce"]["content"]):
                 dish["sauce"]["recipe"]["content"][component]["qt"] = my_tuple[1]
-            print("составили рецепт соуса", dish["sauce"])
+            # print("составили рецепт соуса", dish["sauce"])
 
         def create_filling_recipe(self, dish):
             """Этот метод выбирает рецепт начинки для начинки в общем и для каждого компонента начинки в целом"""
             filling_id = dish["filling"]["id"]
             dough_id = dish["dough"]["id"]
             dish["filling"]["cooking_program"] = self.recipes["filling"][filling_id]["cooking_program"][dough_id]
-            dish["filling"]["heating_program"] = self.recipes["filling"][filling_id]["heating_program"][dough_id]
+            dish["filling"]["make_crust_program"] = self.recipes["filling"][filling_id]["make_crust_program"][dough_id]
             dish["filling"]["pre_heating_program"] = self.recipes["filling"][filling_id]["pre_heating_program"][dough_id]
-            dish["filling"]["stand_by_mode"] = self.recipes["filling"][filling_id]["stand_by_mode"][dough_id]
+            dish["filling"]["stand_by"] = self.recipes["filling"][filling_id]["stand_by_program"][dough_id]
             dish["filling"]["chain"] = self.recipes["filling"][filling_id]["chain"]
             halfstaff_content = dish["filling"]["content"]
             cutting_program = self.recipes["filling"][filling_id]["cutting_program"]
@@ -155,7 +155,7 @@ class PizzaBotMain(object):
             create_sauce_recipe(self, dish)
             create_filling_recipe(self, dish)
             dish["additive"]["recipe"] = self.recipes["additive"]
-            print("В блюдо добавили рецепт")
+            # print("В блюдо добавили рецепт")
 
     def fill_current_dishes_proceed(self, dish):
         """ Добавляет блюда заказа в self.current_dishes_proceed
@@ -280,6 +280,7 @@ class PizzaBotMain(object):
                         if isinstance(chain_to_do, tuple):
                             chain, params = chain_to_do
                             _, cutting_program, storage_adress = params
+                            print("Начинаем готовить", _)
                             await chain(dish, storage_adress, cutting_program)
                         else:
                             await chain_to_do(dish)
