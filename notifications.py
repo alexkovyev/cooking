@@ -32,7 +32,7 @@ class Notifications(object):
         """метод отправляет сообщения из списка """
         pass
 
-    async def list_upddate(self):
+    async def list_update(self):
         """метод записывает, что уведомление отпарвлено, то есть помещает в списки
                 self.half_staff_availability_notifications_send
                 self.half_staff_expiration_date_notifications"""

@@ -20,7 +20,7 @@ class Recipy(ConfigMixin):
     """Основной класс рецепта, содержит все действия по приготовлению блюда"""
 
     def __init__(self):
-        # по умолчанию значение False.
+        # is_cut_station_free по умолчанию значение False.
         # Меняется на False:
         # - лопатка приезжает в станцию нарезки
         # - поливаем соусом
@@ -28,7 +28,7 @@ class Recipy(ConfigMixin):
         self.is_cut_station_free = asyncio.Event()
         self.time_limit = None
 
-    # RA
+    # методы в части RA
     async def get_move_chain_duration(self, place_to):
         """ Метод получает варианты длительности передвижения, выбирает тот, который
         удовлетвоаряет условиям
@@ -80,7 +80,7 @@ class Recipy(ConfigMixin):
                 time_options = list(filter(lambda t: t <= time_left, delivery_time_options))
                 if time_options:
                     duration = max(time_options)
-                is_need_to_dance = True if time_left>duration else False
+                is_need_to_dance = True if time_left > duration else False
                 dance_time = time_left - duration
                 print("Время танца", dance_time)
             await RA.position_move(place_to, duration)
@@ -347,6 +347,9 @@ class Recipy(ConfigMixin):
         """Этот метод делает корочку на пицце"""
         print("Начинаем делать корочку", time.time())
 
+    async def create_dish_recipe(self):
+        """создает рецепт блюда"""
+        pass
 
     # async def new_run_baking(self):
     #     print("начинаем печь", time.time())
@@ -358,8 +361,6 @@ class Recipy(ConfigMixin):
     #     print("Это результат выпечки", time.time(), baking_results)
     #     print("Выпечка зарешена", time.time())
     #     return baking_results
-
-
 
 class DishPacking(ConfigMixin):
     """Запускает действия по упаковке товара"""

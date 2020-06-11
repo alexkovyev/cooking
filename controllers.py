@@ -13,7 +13,8 @@ from pydispatch import Dispatcher
    - start_baking Общий метод для работы с печами для операций:
     а) прогрев печи
     б) выпечка
-    в) корочкообразование
+    в) подогрев
+    г) корочкообразование
    - give_paper
    - inform_order_is_delivered
    - send_message_qr
