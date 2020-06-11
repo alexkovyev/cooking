@@ -150,6 +150,8 @@ class BaseDish(Recipy):
         self.chain_list = self.recipe_chain_creation()
         self.baking_program = dish_data["filling"]["cooking_program"]
         self.heating_program = dish_data["filling"]["heating_program"]
+        self.pre_heating_program = dish_data["filling"]["pre_heating_program"]
+        self.stand_by_mode = dish_data["filling"]["stand_by_mode"]
         self.oven_future = None
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         # self.pickup_point_unit: int

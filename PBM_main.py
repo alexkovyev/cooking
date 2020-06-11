@@ -142,10 +142,11 @@ class PizzaBotMain(object):
             dough_id = dish["dough"]["id"]
             dish["filling"]["cooking_program"] = self.recipes["filling"][filling_id]["cooking_program"][dough_id]
             dish["filling"]["heating_program"] = self.recipes["filling"][filling_id]["heating_program"][dough_id]
+            dish["filling"]["pre_heating_program"] = self.recipes["filling"][filling_id]["pre_heating_program"][dough_id]
+            dish["filling"]["stand_by_mode"] = self.recipes["filling"][filling_id]["stand_by_mode"][dough_id]
             dish["filling"]["chain"] = self.recipes["filling"][filling_id]["chain"]
             halfstaff_content = dish["filling"]["content"]
             cutting_program = self.recipes["filling"][filling_id]["cutting_program"]
-            # dish["filling"]["content"] = tuple(zip(halfstaff_content, cutting_program))
             dish["filling"]["content"] = [list(_) for _ in (zip(halfstaff_content, cutting_program))]
             print("Составили рецепт начинки", dish["filling"])
 
