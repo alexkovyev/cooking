@@ -1,6 +1,7 @@
 """Этот модуль управляет заказами и блюдами"""
 import asyncio
 import time
+import types
 
 from base_order import BaseOrder
 from equipment import Equipment
@@ -24,9 +25,11 @@ class PizzaBotMain(object):
         self.time_to_cook_all_dishes_left = 0
         self.orders_requested_for_delivery = {}
         self.is_free = False
+        # разные полезные очереди
         self.main_queue = asyncio.Queue()
-        self.delivety_queue = asyncio.Queue()
+        self.delivery_queue = asyncio.Queue()
         self.maintain_queue = asyncio.Queue()
+        self.immediately_executed_queue = asyncio.Queue()
 
     def checking_order_for_double(self, new_order_id):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке
@@ -204,7 +207,7 @@ class PizzaBotMain(object):
     def check_if_free(self):
         """Проверяет можно ли танцеать, те все очереди пустые"""
         if not all(
-                map(lambda p: p.empty(), (self.main_queue, self.maintain_queue, self.delivety_queue))):
+                map(lambda p: p.empty(), (self.main_queue, self.maintain_queue, self.delivery_queue))):
             self.is_free = False
         else:
             self.is_free = True
@@ -212,7 +215,7 @@ class PizzaBotMain(object):
         return self.is_free
 
     async def hello_from_qr_code(self, qr_code_data):
-        await self.delivety_queue.put(qr_code_data)
+        await self.delivery_queue.put(qr_code_data)
         print("QR код обработан", time.time())
 
     async def wash_me(self, new_data):
@@ -255,12 +258,70 @@ class PizzaBotMain(object):
         washing_request = asyncio.create_task(wait_wash_requests(cntrls_events))
         await asyncio.gather(qr_event_waiter, status_change_waiter, washing_request)
 
+    async def cooking_immediately_execute(self):
+        while True:
+            while not self.immediately_executed_queue.empty():
+                print("В срочной очереди появился чейн", time.time())
+                print("Размер очереди", self.immediately_executed_queue.qsize())
+                chain_to_do = await self.immediately_executed_queue.get()
+                if isinstance(chain_to_do, tuple):
+                    task, params = chain_to_do
+                    print("В срочной очереди", task, time.time())
+                    await asyncio.create_task(task(params))
+                if isinstance(chain_to_do, types.MethodType):
+                    print("В срочной очереди", chain_to_do, time.time())
+                    await asyncio.create_task(chain_to_do())
+            await asyncio.sleep(0.5)
+
+    async def usual_cooking(self):
+        while True:
+            print("Работает cooking", time.time())
+            self.is_free = self.check_if_free()
+            if self.is_free:
+                print("Танцуем")
+                await RA.dance()
+            else:
+                # запустить мeтод где RA, какой захват и другую подготовительную работу
+                if not self.delivery_queue.empty():
+                    print("Выдаем заказ")
+                    await self.delivery_queue.get()
+                    await asyncio.sleep(5)
+                elif not self.main_queue.empty():
+                    print("Вернулись в очередь main")
+                    dish, chain_to_do = await self.main_queue.get()
+                    # print("Это блюдо", dish)
+                    # print("Это тип чейна", type(chain_to_do))
+                    if dish.status != "failed_to_be_cooked":
+                        print("Готовим блюдо", dish.id)
+                        if isinstance(chain_to_do, tuple):
+                            chain, params = chain_to_do
+                            _, cutting_program, storage_adress = params
+                            print("Начинаем готовить", _.upper())
+                            # await chain(dish, storage_adress, cutting_program)
+                            await chain(storage_adress, cutting_program, self)
+                        else:
+                            # await chain_to_do(dish)
+                            await chain_to_do(self)
+                    else:
+                        continue
+
+                elif not self.maintain_queue.empty():
+                    print("Моем или выкидываем пиццу")
+
     async def cooking(self):
         """Эта курутина обеспеивает вызов методов по приготовлению блюд и другой важной работе"""
 
         while True:
             print("Работает cooking", time.time())
-            time_limit = None
+            # time_limit = None
+
+            # while not self.immediately_executed_queue.empty():
+            #     chain_to_do = await self.immediately_executed_queue.get()
+            #     if isinstance(chain_to_do, tuple):
+            #         task, params = chain_to_do
+            #         await asyncio.create_task(task(params))
+            #     if isinstance(chain_to_do, types.MethodType):
+            #         await asyncio.create_task(chain_to_do())
 
             self.is_free = self.check_if_free()
             if self.is_free:
@@ -268,31 +329,31 @@ class PizzaBotMain(object):
                 await RA.dance()
             else:
                 # запустить мeтод где RA, какой захват и другую подготовительную работу
-                if not self.delivety_queue.empty():
+                if not self.delivery_queue.empty():
                     print("Выдаем заказ")
-                    await self.delivety_queue.get()
+                    await self.delivery_queue.get()
                     await asyncio.sleep(5)
                 elif not self.main_queue.empty():
                     print("Вернулись в очередь main")
                     dish, chain_to_do = await self.main_queue.get()
+                    # print("Это блюдо", dish)
+                    # print("Это тип чейна", type(chain_to_do))
                     if dish.status != "failed_to_be_cooked":
                         print("Готовим блюдо", dish.id)
                         if isinstance(chain_to_do, tuple):
                             chain, params = chain_to_do
                             _, cutting_program, storage_adress = params
-                            print("Начинаем готовить", _)
-                            await chain(dish, storage_adress, cutting_program)
+                            print("Начинаем готовить", _.upper())
+                            # await chain(dish, storage_adress, cutting_program)
+                            await chain(storage_adress, cutting_program, self)
                         else:
-                            await chain_to_do(dish)
+                            # await chain_to_do(dish)
+                            await chain_to_do(self)
                     else:
                         continue
 
                 elif not self.maintain_queue.empty():
                     print("Моем или выкидываем пиццу")
-
-            # else:
-            #     print("Dancing 3 secs")
-            #     await asyncio.sleep(3)
 
     """Валиация qr кода
        входные данные: чек код заказа и номер пункта выдачи

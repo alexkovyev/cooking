@@ -8,8 +8,16 @@ class Equipment(object):
                                     1: {"oven_id": 1, "status": "occupied", "dish": 323,
                                        "limit      }}
     oven_id:{}, во вложенном словаре oven_id нужен для функции fetch_free_oven
+
+    статусы печи:
+    free - свободная
+    reserved - зарезервирована
+    occupied - пицца внутри
+    waiting_15 - ждем первые 15 минут
+    waiting_60 - ждем до 60 минут
+    cleaning - чистим
     """
-    OVEN_STATUSES = ["broken", "not_available", "free", "reserved", "occupied"]
+    OVEN_STATUSES = ["broken", "free", "reserved", "occupied", "short_stand_by", "long_stand_by"]
 
     def __init__(self, equipment_data):
         self.oven_available = equipment_data["ovens"]

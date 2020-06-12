@@ -147,7 +147,8 @@ class BaseDish(Recipy):
 
         self.oven_unit = free_oven_id
         self.status = "received"
-        self.chain_list = self.recipe_chain_creation()
+        self.chain_list = self.create_dish_recipe()
+        # self.chain_list = self.recipe_chain_creation()
         self.baking_program = dish_data["filling"]["cooking_program"]
         self.make_crust_program = dish_data["filling"]["make_crust_program"]
         self.pre_heating_program = dish_data["filling"]["pre_heating_program"]
@@ -156,13 +157,13 @@ class BaseDish(Recipy):
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         # self.pickup_point_unit: int
 
-    def recipe_chain_creation(self):
-        chain_list = [Recipy.chain_get_dough_and_sauce]
-        for filling_item in self.filling.filling_content:
-            # filling_item = ['tomato', {'program_id': 2, 'duration': 30}, ('d4', (3, 4))]
-            chain_list.append((Recipy.get_filling_chain, filling_item))
-        chain_list.append(Recipy.bring_vane_to_oven)
-        return chain_list
+    # def recipe_chain_creation(self):
+    #     chain_list = [Recipy.chain_get_dough_and_sauce]
+    #     for filling_item in self.filling.filling_content:
+    #         # filling_item = ['tomato', {'program_id': 2, 'duration': 30}, ('d4', (3, 4))]
+    #         chain_list.append((Recipy.get_filling_chain, filling_item))
+    #     chain_list.append(Recipy.bring_vane_to_oven)
+    #     return chain_list
 
     def status_change(self, new_status):
         """Метод меняет статус блюда.

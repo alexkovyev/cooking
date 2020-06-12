@@ -155,10 +155,10 @@ class Controllers(Movement):
                sets data in time_changes_request {oven_id: unix_time} для всех печей, время которых изменилось
                result: bool or raise OvenError
          """
-        print("Начинаем выпечку", time.time())
+        print("Начинаем",oven_mode, time.time())
         time_changes_requset.set_result({21: (time.time() + 180), 20: (time.time() + 80), "new": time.time()})
         result = await cls.movement()
-        print("контроллеры закончили печь", time.time())
+        print("контроллеры закончили", oven_mode, time.time())
         return result
 
     @classmethod

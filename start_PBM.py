@@ -23,7 +23,8 @@ async def create_tasks(app, today_orders, cntrls_events):
     events = asyncio.create_task(event_generator(cntrls_events))
     controllers_task = asyncio.create_task(today_orders.controllers_alert_handler(cntrls_events))
     cooking_task = asyncio.create_task(today_orders.cooking())
-    await asyncio.gather(controllers_task, cooking_task, events)
+    super_speedy = asyncio.create_task(today_orders.cooking_immediately_execute())
+    await asyncio.gather(controllers_task, cooking_task, events, super_speedy)
 
 
 def start(equipment_data, recipes):
