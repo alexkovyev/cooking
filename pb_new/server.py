@@ -14,8 +14,7 @@ class PizzaBotMain(object):
 
     def __init__(self):
         # в чем разница в статусе и mode
-        self.status = "ready"
-        self.current_object_mode = "sleeping"
+        self.kiosk_status = "stand_by"
         self.equipment = None
         self.cntrls_events = ControllersEvents()
 
@@ -28,6 +27,9 @@ class PizzaBotMain(object):
         scheduler = AsyncIOScheduler()
         scheduler.add_job(self.test_scheduler, 'interval', seconds=5)
         return scheduler
+
+    def get_config_data(self):
+        pass
 
     async def test_working(self):
         while True:
@@ -47,7 +49,13 @@ class PizzaBotMain(object):
             await hardware_broke_handler(new_data)
 
     async def main_worker(self):
-        pass
+        print("Работает основной worker")
+        await asyncio.sleep(5)
+
+    async def discord_sender(self):
+        print("Работает discord отправитель")
+        await asyncio.sleep(5)
+
 
     async def create_tasks(self, app, scheduler):
         runner = web.AppRunner(app)
@@ -59,8 +67,10 @@ class PizzaBotMain(object):
         controllers_bus = asyncio.create_task(event_generator(self.cntrls_events))
         test_task = asyncio.create_task(self.test_working())
         event_listener = asyncio.create_task(self.create_hardware_broke_listener())
+        main_flow = asyncio.create_task(self.main_worker())
+        discord_sender = asyncio.create_task(self.discord_sender())
 
-        await asyncio.gather(controllers_bus, test_task, event_listener)
+        await asyncio.gather(controllers_bus, test_task, event_listener, main_flow, discord_sender)
 
     def start_server(self):
         app = self.create_server()
