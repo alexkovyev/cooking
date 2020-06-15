@@ -171,16 +171,14 @@ class Controllers(Movement):
         return
 
     @classmethod
-    async def inform_order_is_delivered(cls, pick_up_point):
-        """Метод информирует контроллеры о том, что заказ доставлен в ячейку выдачи
-        Вопрос: что нужно передать в метод"""
-        print("Сообщаем, что пицца в станции упаковки")
+    async def set_pickup_point_mode(cls, mode, pick_up_point):
+        """Метод выставляет режим работы пункта выдачи"""
         return True
 
     @classmethod
-    async def send_message_qr(cls, message):
-        """Метод отправляет сообщение о готовности заказа
-        Вопрос: Что должно быть в сообщении """
-        print("Отправляем сообщение о запросе QR-кода")
-        return True
+    async def deliver_order(cls):
+        """Метод запускает процедуру выдачи заказа и уведомления о том, получен ли заказ"""
+        pass
+
+
 

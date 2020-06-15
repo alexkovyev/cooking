@@ -13,7 +13,6 @@ from views import hardware_broke_handler
 class PizzaBotMain(object):
 
     def __init__(self):
-        # в чем разница в статусе и mode
         self.kiosk_status = "stand_by"
         self.equipment = None
         self.cntrls_events = ControllersEvents()
@@ -26,10 +25,16 @@ class PizzaBotMain(object):
     def create_scheduler(self):
         scheduler = AsyncIOScheduler()
         scheduler.add_job(self.test_scheduler, 'interval', seconds=5)
+        # переделать на включение в определенный момент
+        scheduler.add_job(self.turn_on_cooking_mode, 'interval', seconds=24)
         return scheduler
 
     def get_config_data(self):
         pass
+
+    async def turn_on_cooking_mode(self):
+        self.kiosk_status = "cooking"
+        print("Режим готовки активирован", self.kiosk_status)
 
     async def test_working(self):
         while True:
@@ -64,13 +69,15 @@ class PizzaBotMain(object):
         await site.start()
         scheduler.start()
         # Переделать потом на генерацию из списка
+
         controllers_bus = asyncio.create_task(event_generator(self.cntrls_events))
-        test_task = asyncio.create_task(self.test_working())
         event_listener = asyncio.create_task(self.create_hardware_broke_listener())
         main_flow = asyncio.create_task(self.main_worker())
         discord_sender = asyncio.create_task(self.discord_sender())
+        test_task = asyncio.create_task(self.test_working())
 
         await asyncio.gather(controllers_bus, test_task, event_listener, main_flow, discord_sender)
+
 
     def start_server(self):
         app = self.create_server()

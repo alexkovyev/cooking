@@ -412,6 +412,9 @@ class Recipy(ConfigMixin):
         dish_recipe.append(self.bring_vane_to_oven)
         return dish_recipe
 
+    def create_dish_heating_recipe(self):
+        pass
+
 class DishPacking(ConfigMixin):
     """Запускает действия по упаковке товара"""
     def __init__(self):

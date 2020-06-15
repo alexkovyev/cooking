@@ -6,6 +6,7 @@ import types
 from base_order import BaseOrder
 from equipment import Equipment
 from RA import RA
+from controllers import Controllers
 
 
 class PizzaBotMain(object):
@@ -215,7 +216,9 @@ class PizzaBotMain(object):
         return self.is_free
 
     async def hello_from_qr_code(self, qr_code_data):
-        await self.delivery_queue.put(qr_code_data)
+        is_order_ready = self.check_requested_order_status(qr_code_data)
+
+        # await self.delivery_queue.put(qr_code_data)
         print("QR код обработан", time.time())
 
     async def wash_me(self, new_data):
@@ -245,7 +248,7 @@ class PizzaBotMain(object):
                 await self.equipment.oven_broke_handler(new_data)
 
         async def wait_wash_requests(cntrls_events):
-            """ """
+            """Запрос на мойку """
             event_name = "equipment_washing_request"
             event = cntrls_events.get_dispatcher_event(event_name)
             while True:
@@ -363,61 +366,40 @@ class PizzaBotMain(object):
        добавить статус "time_is_up"
        """
 
-    STATUS_FOR_CNTRL = {"ready": "заказ готов, скоро будет доставлен",
-                        "failed_to_be_cooked": "не смогли приготовить",
-                        "cooking": "находится в процессе готовки", "time_is_up": "время получения заказа истекло",
-                        "delivered": "заказ уже получен", "not_found": "заказ не найден"}
 
-    async def qr_code_alarm(self):
-        """ Ожидаем получения qr кода от контроллера"""
-        print("Мониторим есть ли запрос qr code")
-        while True:
-            # тут какая то классная команда контроллерам, ниже просто симуляция работы
-            await asyncio.sleep(30)
-            # {"ref_id": 12, "pickup": 1} взяты для примера
-            self.check_order_status({"ref_id": 12, "pickup": 1})
-
-    def check_order_status(self, params):
+    def check_requested_order_status(self, params):
         """Этот метод проверяет, есть ли заказ с таким чек кодом в current_orders_proceed.
         Входные данные params: полученный от контроллера словарь с чек кодом заказа и окном выдачи
         "ref_id": int, "pickup": int"""
-        order_check_code = params["ref_id"]
-        pickup_point = params["pickup"]
-        if order_check_code in self.current_orders_proceed:
-            print("Валидный qr code")
-            order_status = self.current_orders_proceed[order_check_code].status
-            return self.order_status_handler(order_status, order_check_code)
-        else:
-            return self.status_to_cntrl("not found")
-
-    def order_status_handler(self, order_status, order_check_code):
-        """Этот метод анализирует статус и запускает обработчик отправляет значение контролеру"""
-        if order_status == "ready":
-            print("Валидный qr code, надо выдать заказ")
+        try:
+            order_check_code = params["ref_id"]
+            pickup_point = params["pickup"]
+        except KeyError:
+            print("Ошибка ключа, что делать?")
+        set_mode_param = self.evaluation_status_to_set_mode(order_check_code)
+        if set_mode_param == "ready":
             self.orders_requested_for_delivery[order_check_code] = order_check_code
-            return self.status_to_cntrl("ready")
-        elif order_status == "packed" or order_status == "wait to delivery":
-            return self.status_to_cntrl("ready")
-        elif order_status == "cooking" or order_status == "received":
-            return self.status_to_cntrl("cooking")
-        elif order_status == "failed_to_be_cooked":
-            self.present_delivery_handler()
-            return self.status_to_cntrl("failed_to_be_cooked")
-        else:
-            return self.status_to_cntrl(order_status)
+        await Controllers.set_pickup_point_mode(set_mode_param, pickup_point)
 
-    async def status_to_cntrl(self, status_of_order):
+    async def evaluation_status_to_set_mode(self, order_check_code):
         """Передает контроллу значение, на основании которого пользователю выводится информация о заказе"""
-        print("контроллеру передано сообщение: ", self.STATUS_FOR_CNTRL[status_of_order])
-        # обращеноие к контролу
-
-    # не надо вызывать, поскольку постоянно идет проверка на наличие заказов в orders_requested_for_delivery
-    # async def order_delivery_handler(self):
-    # """Обрабатывает процедуру получения заказа - Настя"""
-    # print("получение заказа")
-    # pass
-
-    async def present_delivery_handler(self):
-        """Обрабатывает процедуру получения подарка"""
-        print("получение подарка")
-        pass
+        CNTRLS_SET_MODE_OPTIONS = {1: "not_found",
+                                   2: "in_progress",
+                                   3: "ready"}
+        OPTIONS = {
+            "received": 2,
+            "cooking": 2,
+            "ready": 3,
+            "informed": 3,
+            "failed_to_be_cooked":3
+        }
+        if order_check_code in self.current_orders_proceed:
+            order_status = self.current_orders_proceed[order_check_code].status
+            try:
+                set_mode = CNTRLS_SET_MODE_OPTIONS[OPTIONS[order_status]]
+            except KeyError:
+                print("статус блюда не распознан")
+                set_mode = "not_found"
+        else:
+            set_mode = "not_found"
+        return set_mode
