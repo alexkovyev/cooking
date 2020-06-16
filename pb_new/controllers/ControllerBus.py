@@ -10,10 +10,11 @@ from pydispatch import Dispatcher
    - give_dough
    - give_sauce
    - cut_the_product
-   - turn_oven_heating_on
-   - start_baking Предлагаю объединить с turn_oven_heating_on, при прогреве 
-   в качве baking_program указать id программы прогрева
-   
+   - start_baking Общий метод для работы с печами для операций:
+    а) прогрев печи
+    б) выпечка
+    в) подогрев
+    г) корочкообразование
    - give_paper
    - inform_order_is_delivered
    - send_message_qr
@@ -84,7 +85,7 @@ async def event_generator(cntrls_events):
         my_choice = random.randint(0, 2)
         what_happened = options[my_choice]
         await what_happened(cntrls_events)
-        n = random.randint(6, 14)
+        n = random.randint(60, 140)
         print(f"Trouble-maker засыпает на {n} сек в {time.time()}")
         await asyncio.sleep(n)
         print("Trouble-maker снова с нами", time.time())
@@ -97,8 +98,7 @@ class Movement(object):
     @staticmethod
     async def movement(*args):
         n = random.randint(20, 40)
-        print("-- Время работы", n)
-        print("-- Запустилась работа метода контроллеров")
+        print("-- Время работы контроллеров", n)
         await asyncio.sleep(n)
         result = random.choice([True, True, True])
         print("-- Метод контроллеров завершен")
@@ -140,36 +140,25 @@ class Controllers(Movement):
         return result
 
     @classmethod
-    async def turn_oven_heating_on(cls, oven_id, time_changes_request):
-        """Метод запускает прогрев печи перед выпечкой и корочкообразовании.
-        Алексей утверждает, что это осуществляется по 1 программе (то есть время, режимы нагрева
-        и температура) одинакова для любого рецепта \ этапа.
-        time_changes_request добавлен по иницитиве Арсения для обеспечения единообразия интерфейсов
-        :param oven_id: uuid4 str
-               time_changes_request: futura object
-        :return futura_object returns dict {oven_id: unix_time} для всех печей, время которых изменилось
-                result: bool
-        """
-        print("Включили нагрев печи", oven_id)
-        result = await cls.movement()
-        return result
-
-    @classmethod
-    async def start_baking(cls, oven_unit, baking_program, time_changes_requset):
+    async def start_baking(cls, oven_unit, oven_mode, program, time_changes_requset):
         """Запускает выпечку в конкртеной печи
         :param oven_unit: uuid4
-               baking_program: int
+               oven_mode: str
+               program: int
                time_changes_request: futura object
-        ВОПРОС: нужно ли указывать тип операции (корочкообразование или выпечка? или просто номер программы),
-                так как программы корочки и выпечки могут сопасть по цифрам или не нужно и просто номер?
+        oven_mode options:
+        - "pre_heating"
+        - "baking"
+        - "stand_by"
+        - "make_crust"
         :return
                sets data in time_changes_request {oven_id: unix_time} для всех печей, время которых изменилось
                result: bool or raise OvenError
          """
-        print("Начинаем выпечку", time.time())
+        print("Начинаем",oven_mode, time.time())
         time_changes_requset.set_result({21: (time.time() + 180), 20: (time.time() + 80), "new": time.time()})
         result = await cls.movement()
-        print("контроллеры закончили печь", time.time())
+        print("контроллеры закончили", oven_mode, time.time())
         return result
 
     @classmethod
@@ -182,63 +171,11 @@ class Controllers(Movement):
         return
 
     @classmethod
-    async def inform_order_is_delivered(cls, pick_up_point):
-        """Метод информирует контроллеры о том, что заказ доставлен в ячейку выдачи
-        Вопрос: что нужно передать в метод"""
-        print("Сообщаем, что пицца в станции упаковки")
+    async def set_pickup_point_mode(cls, mode, pick_up_point):
+        """Метод выставляет режим работы пункта выдачи"""
         return True
 
     @classmethod
-    async def send_message_qr(cls, message):
-        """Метод отправляет сообщение о готовности заказа
-        Вопрос: Что должно быть в сообщении """
-        print("Отправляем сообщение о запросе QR-кода")
-        return True
-
-class ControllerBus(object):
-
-    def __init__(self):
-        self.cntrls_events = ControllersEvents()
-
-
-    async def qr_code_scanning_alarm(self):
-        """ В теле уведомления (params) в словаре необходимо указать следующие данные
-        (пары key:value с аннотацией типов)
-        - "check_code": str,  value: str
-        - "pickup": str, value: uuid4 str
-        Идентификатор оборудования должен быть единым для всех элементов системы. """
-        print("Сработало событие qr код", time.time())
-        params = {"ref_id": 65, "pickup": 1}
-        self.qr_scanned(params)
-
-    async def hardware_status_changed(self):
-        """ ВОПРОС ТРЕБУЕТ ОТВЕТА к контроллерам: по идее тут все оборудование. Вы просто выдаете идентификатор и статус
-        или будет еще тип: "oven", "cut_station", те {"equipment_type": cut_station,
-                                                      "uuid": o48932492834281,
-                                                       "status": "broken"}
-        Приходят только уведомления о поломке, возобнавление работы через "оператора и перезагрузку"
-        """
-        print("Сработало событие поломка печи", time.time())
-        self.hardware_status_changed('21', 'broken')
-
-    async def equipment_washing_request(self):
-        """Информирует о том, что необходимо провести мойку такого то оборудования"""
-        print("Нужно помыть оборудование", time.time())
-        _unit_name = "cut_station"
-        self.request_for_wash(_unit_name)
-
-    async def event_generator(self):
-        while True:
-            # это эмуляция работы контроллеров по генерации разных событий
-            # Используется PBM для тестирования
-            await asyncio.sleep(2)
-            print("Выбираем событие", time.time())
-            options = [self.qr_code_scanning_alarm, self.hardware_status_changed,
-                       self.equipment_washing_request]
-            my_choice = random.randint(0, 2)
-            what_happened = options[my_choice]
-            await what_happened(cntrls_events)
-            n = random.randint(60, 140)
-            print(f"Trouble-maker засыпает на {n} сек в {time.time()}")
-            await asyncio.sleep(n)
-            print("Trouble-maker снова с нами", time.time())
+    async def deliver_order(cls):
+        """Метод запускает процедуру выдачи заказа и уведомления о том, получен ли заказ"""
+        pass

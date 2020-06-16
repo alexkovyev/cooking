@@ -1,3 +1,4 @@
+import asyncio
 from aiohttp import web
 import time
 
@@ -14,3 +15,5 @@ async def hardware_broke_handler(event_data):
     oven_id = int(event_data["unit_name"])
     oven_status = event_data["status"]
     print("Обработали", oven_id, oven_status)
+
+

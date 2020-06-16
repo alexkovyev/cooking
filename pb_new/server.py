@@ -8,14 +8,18 @@ from config import SERVER_HOST, SERVER_PORT
 from controllers.ControllerBus import ControllersEvents, event_generator
 from urls import setup_routes
 from views import hardware_broke_handler
+from pb_new.kiosk_modes import StandBy, CookingMode
 
 
 class PizzaBotMain(object):
 
     def __init__(self):
         self.kiosk_status = "stand_by"
-        self.equipment = None
+        self.is_kiosk_busy = False
+        self.current_instance = StandBy()
+        self.equipment = StandBy()
         self.cntrls_events = ControllersEvents()
+        print(type(self.cntrls_events))
 
     def create_server(self):
         app = web.Application()
@@ -33,12 +37,19 @@ class PizzaBotMain(object):
         pass
 
     async def turn_on_cooking_mode(self):
-        self.kiosk_status = "cooking"
+        """Включить можно только после завершения тестов"""
+        if self.kiosk_status == "stand_by":
+            self.kiosk_status = "cooking"
+            self.current_instance = CookingMode()
+            await self.current_instance.start_pbm()
+        elif self.kiosk_status == "testing_mode":
+            pass
         print("Режим готовки активирован", self.kiosk_status)
 
     async def test_working(self):
         while True:
             print("запускается фоновая задача", time.time())
+            print("Текущий режим", self.current_instance)
             await asyncio.sleep(5)
             print("фоновая задача отработала", time.time())
 
@@ -61,6 +72,9 @@ class PizzaBotMain(object):
         print("Работает discord отправитель")
         await asyncio.sleep(5)
 
+    async def logging_task(self):
+        print("Работает логгер")
+        await asyncio.sleep(5)
 
     async def create_tasks(self, app, scheduler):
         runner = web.AppRunner(app)
@@ -75,8 +89,9 @@ class PizzaBotMain(object):
         main_flow = asyncio.create_task(self.main_worker())
         discord_sender = asyncio.create_task(self.discord_sender())
         test_task = asyncio.create_task(self.test_working())
+        logging_task = asyncio.create_task(self.logging_task())
 
-        await asyncio.gather(controllers_bus, test_task, event_listener, main_flow, discord_sender)
+        await asyncio.gather(controllers_bus, test_task, event_listener, main_flow, discord_sender, logging_task)
 
 
     def start_server(self):

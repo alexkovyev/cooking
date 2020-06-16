@@ -23,9 +23,8 @@ class BaseOrder(object):
         self.ref_id = new_order["refid"]
         self.dishes = self.dish_creation(new_order["dishes"], ovens_reserved)
         self.status = "received"
-        self.liquidation_time_pick_point = None
         self.pickup_point = None
-        # self.delivery_time: datetime
+
 
     def dish_creation(self, dishes, ovens_reserved):
         """Creates list of dishes objects in order"""
@@ -34,53 +33,6 @@ class BaseOrder(object):
                        for index, dish_id in enumerate(dishes)]
 
         return self.dishes
-
-    def is_order_ready(self):
-        """Boolean. Если оба блюда готовы, то готово, можно выдавать. Поменять статус self.status на ready
-        След шаг: отправь на  телевизор (inform_tv_order_is_ready) """
-        pass
-
-    def is_order_failed(self):
-        """Определяет что заказ не выполнен. Поменять статус self.status на "failed_to_be_cooked". Запускает
-        failed_delivery_handler    ДОПИСАТЬ!!!!"""
-        pass
-
-    def inform_tv_order_is_ready(self):
-        """отправляет сигнал о готовности блюда на телевизор, Поменять статус self.status на "informed"
-         След шаг: запускает таймер отчета времени на забор заказа """
-        pass
-
-    def set_oven_timer_for_liquidation(self):
-        """запускает таймер на ликвидацию зазака. 30 минут с момента. 30 минут хранится в переменной settings.py
-        Таймер делаем отдельным воркером (потоком)? """
-        pass
-
-    def is_order_packed(self):
-        """Проверяет все ли блюда упакованы, меняет статус на "packed"
-         ВОПРОС: как происходит сообщение контролерам о том, что заказ можно выдавать?"""
-        pass
-
-    def is_order_in_pickup_point(self):
-        """Проверяет доставлен ли все блюда заказа в ячейку выдачи. Меняет статус на "wait to delivery.
-        Дожен сообщить контролеру о том, что можно сообщение выводить
-        Запускает таймер на время забора заказа клиентом"""
-        pass
-
-    def pickup_point_checking(self):
-        """Проверяет забран ли заказ, вне блока
-        должно посылать сигнал о том, что заказ забрали (изменить статус) """
-        pass
-
-    def order_delivered(self):
-        """Меняет статус заказа доставлен, Поменять статус self.status на "delivered", обнуляет счетчик
-        self.liquidation_time_pick_point, проставляет время получения self.delivery_time Нужна ли доп информация о
-        заказе кроме времени получения?"""
-        pass
-
-    def order_closing(self):
-        """функция обрабатывает закрытие заказа после получения покупателем. Поменять статус self.status на "closed"
-         Что тут делаем по сути? Как записываем в бд, удаляем сами объект или ждем сборщика мусора?"""
-        pass
 
     # Алина код
     def change_status(self, new_status):
@@ -148,22 +100,13 @@ class BaseDish(Recipy):
         self.oven_unit = free_oven_id
         self.status = "received"
         self.chain_list = self.create_dish_recipe()
-        # self.chain_list = self.recipe_chain_creation()
         self.baking_program = dish_data["filling"]["cooking_program"]
         self.make_crust_program = dish_data["filling"]["make_crust_program"]
         self.pre_heating_program = dish_data["filling"]["pre_heating_program"]
         self.stand_by = dish_data["filling"]["stand_by"]
         self.oven_future = None
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
-        # self.pickup_point_unit: int
-
-    # def recipe_chain_creation(self):
-    #     chain_list = [Recipy.chain_get_dough_and_sauce]
-    #     for filling_item in self.filling.filling_content:
-    #         # filling_item = ['tomato', {'program_id': 2, 'duration': 30}, ('d4', (3, 4))]
-    #         chain_list.append((Recipy.get_filling_chain, filling_item))
-    #     chain_list.append(Recipy.bring_vane_to_oven)
-    #     return chain_list
+        self.pickup_point_unit: int
 
     def status_change(self, new_status):
         """Метод меняет статус блюда.

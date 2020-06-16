@@ -215,12 +215,6 @@ class PizzaBotMain(object):
         print("Можно ли танцевать? ", self.is_free)
         return self.is_free
 
-    async def hello_from_qr_code(self, qr_code_data):
-        is_order_ready = self.check_requested_order_status(qr_code_data)
-
-        # await self.delivery_queue.put(qr_code_data)
-        print("QR код обработан", time.time())
-
     async def wash_me(self, new_data):
         print("Получен запрос на помылку оборудования", new_data, time.time())
 
@@ -236,7 +230,7 @@ class PizzaBotMain(object):
                 event_data = await event
                 _, qr_code_data = event_data
                 qr_code_data = qr_code_data["params"]
-                await self.hello_from_qr_code(qr_code_data)
+                await self.qr_code_handler(qr_code_data)
 
         async def wait_for_hardware_status_changed(cntrls_events):
             """new_data - словарь {'unit_name': 'owen_cell_2', 'status': 'broken'} """
@@ -367,7 +361,7 @@ class PizzaBotMain(object):
        """
 
 
-    def check_requested_order_status(self, params):
+    async def qr_code_handler(self, params):
         """Этот метод проверяет, есть ли заказ с таким чек кодом в current_orders_proceed.
         Входные данные params: полученный от контроллера словарь с чек кодом заказа и окном выдачи
         "ref_id": int, "pickup": int"""
@@ -379,10 +373,14 @@ class PizzaBotMain(object):
         set_mode_param = self.evaluation_status_to_set_mode(order_check_code)
         if set_mode_param == "ready":
             self.orders_requested_for_delivery[order_check_code] = order_check_code
+            self.current_orders_proceed[order_check_code].pickup_point = pickup_point
         await Controllers.set_pickup_point_mode(set_mode_param, pickup_point)
+        # await self.delivery_queue.put(qr_code_data)
 
     async def evaluation_status_to_set_mode(self, order_check_code):
-        """Передает контроллу значение, на основании которого пользователю выводится информация о заказе"""
+        """Передает контроллу значение, на основании которого пользователю выводится информация о заказе
+        ПРОВЕРИТЬ СТАТУСЫ блюда !!!!!!!!!
+        """
         CNTRLS_SET_MODE_OPTIONS = {1: "not_found",
                                    2: "in_progress",
                                    3: "ready"}
