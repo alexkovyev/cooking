@@ -100,6 +100,7 @@ class BaseDish(Recipy):
         self.oven_unit = free_oven_id
         self.status = "received"
         self.chain_list = self.create_dish_recipe()
+        self.delivery_chain_list = self.create_dish_delivery_recipe()
         self.baking_program = dish_data["filling"]["cooking_program"]
         self.make_crust_program = dish_data["filling"]["make_crust_program"]
         self.pre_heating_program = dish_data["filling"]["pre_heating_program"]

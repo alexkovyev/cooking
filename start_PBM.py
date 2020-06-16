@@ -4,19 +4,19 @@ import asyncio
 
 from aiohttp import web
 
-from controllers.ControllerBus import cntrls_events, event_generator
+from controllers import cntrls_events, event_generator
 from ss_server_handler import create_server
 from PBM_main import PizzaBotMain
 from settings import QT_DISH_PER_ORDER, SS_SERVER_PORT as port, SS_SERVER_HOST as host
 
 
-async def create_tasks(today_orders, cntrls_events):
+async def create_tasks(app, today_orders, cntrls_events):
     # добавляем асинхонный запуск сервера. не получилось быстро выделить в отдельный такс, не работает сервер
-    # runner = web.AppRunner(app)
-    # await runner.setup()
-    # site = web.TCPSite(runner, host=host, port=port)
-    # await site.start()
-    # print(f"Сервер запущен на {host}:{port}")
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, host=host, port=port)
+    await site.start()
+    print(f"Сервер запущен на {host}:{port}")
 
     # запускаем работу бесконечных тасков cooking и controllers
     # events разовый такс для проверки работоспособности и имитации работы контроллеров

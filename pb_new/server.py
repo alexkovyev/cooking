@@ -20,6 +20,7 @@ class PizzaBotMain(object):
         self.equipment = StandBy()
         self.cntrls_events = ControllersEvents()
         print(type(self.cntrls_events))
+        print(isinstance(self.cntrls_events, ControllersEvents))
 
     def create_server(self):
         app = web.Application()

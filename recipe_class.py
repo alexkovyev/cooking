@@ -4,7 +4,7 @@ import time
 
 from RA import RA
 from RA import RAError
-from controllers.ControllerBus import Controllers
+from controllers import Controllers
 
 from settings import OVEN_LIQUIDATION_TIME
 
@@ -58,14 +58,13 @@ class Recipy(ConfigMixin):
 
     async def atomic_chain_execute(self, atomic_params_dict):
         duration = await self.get_atomic_chain_duration(atomic_params_dict)
-        try:
-            await RA.atomic_action(**atomic_params_dict)
-            print("Успешно выполнили атомарное действие", atomic_params_dict["name"])
-            # self.status = "cooking"
-        except RAError:
-            self.status = "failed_to_be_cooked"
-            print("Ошибка атомарного действия")
-        # return self.status
+        if self.status != "failed_to_be_cooked":
+            try:
+                await RA.atomic_action(**atomic_params_dict)
+                print("Успешно выполнили атомарное действие", atomic_params_dict["name"])
+            except RAError:
+                self.status = "failed_to_be_cooked"
+                print("Ошибка атомарного действия")
 
     async def move_to_object(self, move_params):
         """Эта функция описывает движение до определенного места."""
@@ -176,14 +175,12 @@ class Recipy(ConfigMixin):
             for chain in chain_list:
                 if self.status != "failed_to_be_cooked":
                     chain, params = chain
-                    # self.status = await chain(params)
                     await chain(params)
                 else:
                     break
         except RAError:
             self.status = "failed_to_be_cooked"
             print("Ошибка века")
-        # return self.status
 
     @staticmethod
     async def is_need_to_change_gripper(required_gripper: str):
@@ -207,8 +204,6 @@ class Recipy(ConfigMixin):
         atomic_params = {"name": "get_vane_from_oven",
                           "place": self.oven_unit}
         await self.atomic_chain_execute(atomic_params)
-        # self.status = await self.atomic_chain_execute(atomic_params)
-        # return self.status
 
     async def set_vane_in_oven(self, *args):
         """Этот метод запускает группу атомарных действий RA по размещению лопатки в печи"""
@@ -218,24 +213,18 @@ class Recipy(ConfigMixin):
             if arg == "heating":
                 asyncio.create_task(self.controllers_turn_heating_on())
         await self.atomic_chain_execute(atomic_params)
-        # self.status = await self.atomic_chain_execute(atomic_params)
-        # return self.status
 
     async def control_dough_position(self, *args):
         """отдаем команду на поправление теста"""
         atomic_params = {"name": "get_dough",
                          "place": self.dough.halfstuff_cell}
         await self.atomic_chain_execute(atomic_params)
-        # self.status = await self.atomic_chain_execute(atomic_params)
-        # return self.status
 
     async def leave_vane_in_cut_station(self, *args):
         """отдаем команду оставить лопатку в станции нарезки"""
         atomic_params = {"name": "set_shovel",
                          "place": self.SLICING}
         await self.atomic_chain_execute(atomic_params)
-        # self.status = await self.atomic_chain_execute(atomic_params)
-        # return self.status
 
     # не объединено с выше в 1, так как обработка ошибок может быть разная
     async def take_vane_from_cut_station(self, *args):
@@ -243,8 +232,6 @@ class Recipy(ConfigMixin):
         atomic_params = {"name": "get_shovel",
                          "place": self.SLICING}
         await self.atomic_chain_execute(atomic_params)
-        # self.status = await self.atomic_chain_execute(atomic_params)
-        # return self.status
 
     async def put_half_staff_in_cut_station(self, *args):
         """Этот метод опускает п-ф в станцию нарезки"""
@@ -254,7 +241,7 @@ class Recipy(ConfigMixin):
             "name":"set_product",
             "place": self.SLICING
         }
-        while not self.is_cut_station_free.is_set():
+        while not self.is_cut_station_free.is_set() and self.status != "failed_to_be_cooked":
             print("Танцуем с продуктом")
             await asyncio.sleep(1)
         await self.atomic_chain_execute(atomic_params)
@@ -272,6 +259,14 @@ class Recipy(ConfigMixin):
         atomic_params = {
             "name": "set_pizza",
             "place": self.GIVE_OUT
+        }
+        await self.atomic_chain_execute(atomic_params)
+
+    async def switch_vane(self):
+        print("Запускаем смену лопаток с выдачи на для пиццы")
+        atomic_params = {
+            "name": "get_shovel",
+            "place": self.PACKING
         }
         await self.atomic_chain_execute(atomic_params)
 
@@ -434,50 +429,9 @@ class Recipy(ConfigMixin):
                       (self.move_to_object, (self.pickup_point_unit, None)),
                       (self.dish_extradition, None),
                       (self.move_to_object, (self.PACKING, None)),
-                      # атомарная часть смена лопаток
+                      (self.switch_vane, None),
                       (self.move_to_object, (self.oven_unit, None)),
                       (self.set_vane_in_oven, None),
                       ]
         await self.chain_execute(chain_list)
         print("Закончили упаковку и выдачу пиццы")
-
-class DishPacking(ConfigMixin):
-    """Запускает действия по упаковке товара"""
-    def __init__(self):
-        self.result = False
-
-    async def go_to_oven(self):
-        """Доедь до печи"""
-        pass
-
-    async def get_the_vane_from_oven(self):
-        pass
-
-    async def give_the_paper(self):
-        pass
-
-    async def go_to_package_station(self):
-        pass
-
-    async def pack_pizza(self):
-        pass
-
-    async def go_to_pick_up_point(self):
-        pass
-
-    async def deliver_pizza(self):
-        pass
-
-    async def go_to_package_station(self):
-        pass
-
-    async def switch_vanes(self):
-        pass
-
-    async def go_to_oven(self):
-        pass
-
-    async def put_vane_in_oven(self):
-        pass
-
-

@@ -39,6 +39,7 @@ class ControllersEvents(Dispatcher):
 
 
 cntrls_events = ControllersEvents()
+print(isinstance(cntrls_events, ControllersEvents ))
 
 
 async def event_generator(cntrls_events):
