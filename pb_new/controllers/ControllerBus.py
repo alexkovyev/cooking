@@ -37,10 +37,6 @@ class ControllersEvents(Dispatcher):
     def request_for_wash(self, _unit_name):
         self.emit('equipment_washing_request', unit_name=_unit_name)
 
-
-cntrls_events = ControllersEvents()
-
-
 async def event_generator(cntrls_events):
     """ PBM подписывается на следующие уведомления:
     - сканирование qr-code
@@ -100,7 +96,7 @@ class Movement(object):
         n = random.randint(20, 40)
         print("-- Время работы контроллеров", n)
         await asyncio.sleep(n)
-        result = random.choice([True, True, True])
+        result = random.choice([True, False, True])
         print("-- Метод контроллеров завершен")
         return result
 
@@ -168,7 +164,7 @@ class Controllers(Movement):
         print("Выдаем упаковку", time.time())
         result = await cls.movement()
         print("контроллеры закончили выдавать бумагу", time.time())
-        return
+        return result
 
     @classmethod
     async def set_pickup_point_mode(cls, mode, pick_up_point):

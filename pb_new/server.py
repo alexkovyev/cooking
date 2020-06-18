@@ -8,7 +8,11 @@ from config import SERVER_HOST, SERVER_PORT
 from controllers.ControllerBus import ControllersEvents, event_generator
 from urls import setup_routes
 from views import hardware_broke_handler
-from pb_new.kiosk_modes import StandBy, CookingMode
+from kiosk_modes import (TestingMode,
+                          StandByMode,
+                          CookingMode)
+from discord_sender import DiscordBotSender
+from logs import PBlogs
 
 
 class PizzaBotMain(object):
@@ -16,11 +20,9 @@ class PizzaBotMain(object):
     def __init__(self):
         self.kiosk_status = "stand_by"
         self.is_kiosk_busy = False
-        self.current_instance = StandBy()
-        self.equipment = StandBy()
+        self.current_instance = StandByMode.StandBy()
+        self.equipment = None
         self.cntrls_events = ControllersEvents()
-        print(type(self.cntrls_events))
-        print(isinstance(self.cntrls_events, ControllersEvents))
 
     def create_server(self):
         app = web.Application()
@@ -40,9 +42,10 @@ class PizzaBotMain(object):
     async def turn_on_cooking_mode(self):
         """Включить можно только после завершения тестов"""
         if self.kiosk_status == "stand_by":
-            self.kiosk_status = "cooking"
-            self.current_instance = CookingMode()
-            await self.current_instance.start_pbm()
+            print("ЗАПУСКАЕМ режим ГОТОВКИ")
+            self.current_instance = CookingMode.BeforeCooking()
+            data = await CookingMode.BeforeCooking.start_pbm()
+            self.current_instance = CookingMode.CookingMode()
         elif self.kiosk_status == "testing_mode":
             pass
         print("Режим готовки активирован", self.kiosk_status)
@@ -69,31 +72,22 @@ class PizzaBotMain(object):
         print("Работает основной worker")
         await asyncio.sleep(5)
 
-    async def discord_sender(self):
-        print("Работает discord отправитель")
-        await asyncio.sleep(5)
-
-    async def logging_task(self):
-        print("Работает логгер")
-        await asyncio.sleep(5)
-
     async def create_tasks(self, app, scheduler):
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, host=SERVER_HOST, port=SERVER_PORT)
         await site.start()
         scheduler.start()
-        # Переделать потом на генерацию из списка
 
+        # Переделать потом на генерацию из списка
         controllers_bus = asyncio.create_task(event_generator(self.cntrls_events))
         event_listener = asyncio.create_task(self.create_hardware_broke_listener())
         main_flow = asyncio.create_task(self.main_worker())
-        discord_sender = asyncio.create_task(self.discord_sender())
+        discord_sender = asyncio.create_task(DiscordBotSender.send_message())
         test_task = asyncio.create_task(self.test_working())
-        logging_task = asyncio.create_task(self.logging_task())
+        logging_task = asyncio.create_task(PBlogs.logging_task())
 
         await asyncio.gather(controllers_bus, test_task, event_listener, main_flow, discord_sender, logging_task)
-
 
     def start_server(self):
         app = self.create_server()

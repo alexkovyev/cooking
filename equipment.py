@@ -1,4 +1,5 @@
 """Этот модуль содержит информацию об оборудовании"""
+import asyncio
 
 
 class Equipment(object):
@@ -6,7 +7,7 @@ class Equipment(object):
     Так выглядит информация о печах {12: {"oven_id": 12, "status": "free"},
                                     23: {"oven_id": 23, "status": "reserved", "dish": 213},
                                     1: {"oven_id": 1, "status": "occupied", "dish": 323,
-                                       "limit      }}
+                                       "limit": int}}
     oven_id:{}, во вложенном словаре oven_id нужен для функции fetch_free_oven
 
     статусы печи:
@@ -77,3 +78,24 @@ class Equipment(object):
         self.oven_available[oven_id]["status"] = oven_status
         print("Мы обработали печь")
         print("Вот такие печи", self.oven_available)
+
+    async def set_oven_timer(self):
+        print("!!!!!!!!!!ставим таймер на печь", time.time())
+        oven_future = asyncio.get_running_loop().create_future()
+        self.oven_future = oven_future
+        print("Это футура в заказе", self.oven_future)
+        await asyncio.create_task(self.oven_timer())
+
+    async def oven_timer(self):
+        print("!!!!!!!!!!!!Начинаем ждать первый интервал", time.time())
+        print("Статус печи", self.oven_unit)
+        await asyncio.sleep(OVEN_LIQUIDATION_TIME)
+        print("!!!!!!!!!!! время сна завершено",time.time())
+        if not self.oven_future.cancelled():
+            print("!!!!!!!!!!!!!!Футура блюдо не забрали")
+            self.oven_future.set_result("time is over")
+            await self.dish_liquidation()
+
+    async def time_changes_handler(self, time_futura):
+        """Обрабатывает результаты футуры об изменении времени выпечки"""
+        print(time_futura, time.time())

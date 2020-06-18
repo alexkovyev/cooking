@@ -108,6 +108,7 @@ class BaseDish(Recipy):
         self.oven_future = None
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         self.pickup_point_unit: int
+        self.is_dish_ready = asyncio.Event()
 
     def status_change(self, new_status):
         """Метод меняет статус блюда.
