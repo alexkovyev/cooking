@@ -23,7 +23,7 @@ class PizzaBotMain(object):
         self.kiosk_status = "stand_by"
         self.is_kiosk_busy = False
         self.current_instance = StandByMode.StandBy()
-        self.equipment = Equipment()
+        self.equipment = None
         self.cntrls_events = ControllersEvents()
         self.config = None
 
@@ -36,7 +36,7 @@ class PizzaBotMain(object):
         scheduler = AsyncIOScheduler()
         scheduler.add_job(self.test_scheduler, 'interval', seconds=5)
         # переделать на включение в определенный момент
-        scheduler.add_job(self.turn_on_cooking_mode, 'cron', day_of_week='*', hour='15', minute=4, second=0)
+        scheduler.add_job(self.turn_on_cooking_mode, 'cron', day_of_week='*', hour='23', minute=44, second=0)
         return scheduler
 
     def get_config_data(self):
@@ -56,21 +56,32 @@ class PizzaBotMain(object):
                                  "28cc0239-2e35-4ccd-9fcd-be2155e4fcbe": "ok",
                                  "1b1af602-b70f-42a3-8b5d-3112dcf82c26": "ok",
             },
-            "pick_up_points": {"1431f373-d036-4e0f-b059-70acd6bd18b9":"ok",
-                              "b7f96101-564f-4203-8109-014c94790978":"ok",
+            "dough_dispensers": {"ebf29d04-023c-4141-acbe-055a19a79afe": "ok",
+                                 "2e84d0fd-a71f-4988-8eee-d0373c0bc609": "ok",
+                                 "68ec7c16-f57b-43c0-b708-dfaea5c2e1dd": "ok",
+                                 "75355f3c-bf05-405d-98af-f04bcba7d7e4": "ok",
+                                 },
+            "pick_up_points": {"1431f373-d036-4e0f-b059-70acd6bd18b9": "ok",
+                              "b7f96101-564f-4203-8109-014c94790978": "ok",
                               "73b194e1-5926-45be-99ec-25e1021b96f7": "ok",
             }
         }
         print("Получили данные из БД", time.time())
         return equipment_data
 
+    async def add_equipment_data(self):
+        equipment_data = await self.get_equipment_data()
+        self.equipment = Equipment(equipment_data)
+
     async def turn_on_cooking_mode(self):
         """Включить можно только после завершения тестов"""
         if self.kiosk_status == "stand_by":
             print("ЗАПУСКАЕМ режим ГОТОВКИ")
             self.current_instance = CookingMode.BeforeCooking()
-            data = await CookingMode.BeforeCooking.start_pbm()
-            self.current_instance = CookingMode.CookingMode()
+            (is_ok, self.equipment), recipe = await CookingMode.BeforeCooking.start_pbm(self.equipment)
+            self.current_instance = CookingMode.CookingMode(recipe)
+            self.kiosk_status = "cooking"
+            await self.current_instance.cooking()
         elif self.kiosk_status == "testing_mode":
             pass
         print("Режим готовки активирован", self.kiosk_status)
@@ -105,6 +116,7 @@ class PizzaBotMain(object):
         scheduler.start()
 
         # Переделать потом на генерацию из списка
+        on_start_tasks = asyncio.create_task(self.add_equipment_data())
         controllers_bus = asyncio.create_task(event_generator(self.cntrls_events))
         event_listener = asyncio.create_task(self.create_hardware_broke_listener())
         main_flow = asyncio.create_task(self.main_worker())
@@ -112,7 +124,8 @@ class PizzaBotMain(object):
         test_task = asyncio.create_task(self.test_working())
         logging_task = asyncio.create_task(PBlogs.logging_task())
 
-        await asyncio.gather(controllers_bus, test_task, event_listener, main_flow, discord_sender, logging_task)
+        await asyncio.gather(controllers_bus, test_task, event_listener, main_flow, discord_sender, logging_task,
+                             on_start_tasks)
 
     def start_server(self):
         app = self.create_server()

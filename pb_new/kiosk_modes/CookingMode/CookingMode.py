@@ -3,9 +3,12 @@ import concurrent.futures
 import multiprocessing
 import time
 
+from functools import partial
+
 from pb_new.kiosk_modes.BaseMode import BaseMode
 from recipe_data import recipe_data
-from BaseOrder import BaseOrder
+from .BaseOrder import BaseOrder
+from RA import RA
 
 
 class BeforeCooking(object):
@@ -14,26 +17,11 @@ class BeforeCooking(object):
         self.status = "getting_ready"
 
     @classmethod
-    async def go_to_db_get_data(clx):
-        print("Подключаемся к БД за информацией", time.time())
-        equipment_data = ('супер важная информация об оборудовании', 'из БД')
-        await asyncio.sleep(10)
-        print("Получили данные из БД", time.time())
-        return equipment_data
-
-    @classmethod
-    def start_testing(clx):
+    def start_testing(clx, equipment_data):
         """Тут вызываем методы контролеров по тестированию оборудования"""
 
         # вызывается какой то супер метод контроллеров на проверку, возвращает status и dict с данными об оборудовании
         is_equipment_ok = True
-        equipment_data = {"ovens": {i: {"oven_id": i, "status": "free"} for i in range(1, 22)},
-                          "cut_station": True,
-                          "package_station": True,
-                          "pick_up_points": {1: True,
-                                             2: True,
-                                             3: True}
-                          }
         print("Начинаем тестировать оборудования", time.time())
         time.sleep(40)
         print("Оборудование протестировано, исправно", time.time())
@@ -49,23 +37,26 @@ class BeforeCooking(object):
         return recipes
 
     @classmethod
-    async def start_pbm(self):
-        equipment_data = await self.go_to_db_get_data()
+    async def start_pbm(clx, equipment_data):
         pool = concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count())
         my_loop = asyncio.get_running_loop()
-        async def task_1():
-            is_equipment_ok, equipment_data = await my_loop.run_in_executor(pool, self.start_testing)
+        async def task_1(equipment_data):
+            is_equipment_ok, equipment_data = await my_loop.run_in_executor(pool,
+                                                                            partial(clx.start_testing,
+                                                                                    equipment_data))
             return is_equipment_ok, equipment_data
         async def task_2():
-            recipes = await my_loop.run_in_executor(pool, self.parse_recipes)
+            recipes = await my_loop.run_in_executor(pool, clx.parse_recipes)
             return recipes
-        task_1 = my_loop.create_task(task_1())
+        task_1 = my_loop.create_task(task_1(equipment_data))
         task_2 = my_loop.create_task(task_2())
-        await asyncio.gather(task_1, task_2)
-        self.current_instance = CookingMode()
+        my_result = await asyncio.gather(task_1, task_2)
+        return my_result
 
 
 class CookingMode(BaseMode):
+    STOP_STATUS = "failed_to_be_cooked"
+
     def __init__(self, recipes):
         self.recipes = recipes
         self.current_orders_proceed = {}
