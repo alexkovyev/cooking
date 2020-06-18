@@ -1,18 +1,20 @@
 import asyncio
 from aiohttp import web
 import time
+import uuid
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from config import SERVER_HOST, SERVER_PORT
 from controllers.ControllerBus import ControllersEvents, event_generator
-from urls import setup_routes
-from views import hardware_broke_handler
+from discord_sender import DiscordBotSender
+from equipment import Equipment
 from kiosk_modes.CookingMode import CookingMode
 from kiosk_modes import (TestingMode,
-                          StandByMode)
-from discord_sender import DiscordBotSender
+                         StandByMode)
 from logs import PBlogs
+from urls import setup_routes
+from views import hardware_broke_handler
 
 
 class PizzaBotMain(object):
@@ -21,8 +23,9 @@ class PizzaBotMain(object):
         self.kiosk_status = "stand_by"
         self.is_kiosk_busy = False
         self.current_instance = StandByMode.StandBy()
-        self.equipment = None
+        self.equipment = Equipment()
         self.cntrls_events = ControllersEvents()
+        self.config = None
 
     def create_server(self):
         app = web.Application()
@@ -38,6 +41,28 @@ class PizzaBotMain(object):
 
     def get_config_data(self):
         pass
+
+    async def get_equipment_data(self):
+        print("Подключаемся к БД за информацией", time.time())
+        await asyncio.sleep(10)
+        equipment_data = {
+            "ovens": {i: {"oven_id": str(uuid.uuid4()), "status": "free"} for i in range(1, 22)},
+            "cut_station": {"id": "f50ec0b7-f960-400d-91f0-c42a6d44e3d0",
+                            "status": "ok"},
+            "package_station": {"id": "afeb1c10-83ef-4194-9821-491fcf0aa52b",
+                                "status": "ok"},
+            "sauce_dispensers": {"16ffcee8-2130-4a2f-b71d-469ee65d42d0": "ok",
+                                 "ab5065e3-93aa-4313-869e-50a959458439": "ok",
+                                 "28cc0239-2e35-4ccd-9fcd-be2155e4fcbe": "ok",
+                                 "1b1af602-b70f-42a3-8b5d-3112dcf82c26": "ok",
+            },
+            "pick_up_points": {"1431f373-d036-4e0f-b059-70acd6bd18b9":"ok",
+                              "b7f96101-564f-4203-8109-014c94790978":"ok",
+                              "73b194e1-5926-45be-99ec-25e1021b96f7": "ok",
+            }
+        }
+        print("Получили данные из БД", time.time())
+        return equipment_data
 
     async def turn_on_cooking_mode(self):
         """Включить можно только после завершения тестов"""
