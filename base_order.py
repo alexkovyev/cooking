@@ -24,15 +24,28 @@ class BaseOrder(object):
         self.dishes = self.dish_creation(new_order["dishes"], ovens_reserved)
         self.status = "received"
         self.pickup_point = None
-
+        self.order_ready_monitoring = []
 
     def dish_creation(self, dishes, ovens_reserved):
         """Creates list of dishes objects in order"""
 
         self.dishes = [BaseDish(dish_id, dishes[dish_id], ovens_reserved[index])
                        for index, dish_id in enumerate(dishes)]
-
         return self.dishes
+
+    async def create_monitoring(self):
+        for dish in self.dishes:
+            is_dish_ready = asyncio.Event()
+            dish.is_dish_ready = is_dish_ready
+            self.order_ready_monitoring.append(is_dish_ready)
+        return self.order_ready_monitoring
+
+    async def dish_readiness_monitoring(self):
+        print("Запущен СТОРТОВЫЙ МОНИТОРИНГ")
+        while not all in self.order_ready_monitoring:
+            print("Блюда все еще готовятся")
+            await asyncio.sleep(1)
+        print("Сработало событие ЗАКАЗ ГОТОВ", time.time())
 
     # Алина код
     def change_status(self, new_status):
@@ -78,7 +91,6 @@ class BaseOrder(object):
                 else:
                     return True
 
-
     def __repr__(self):
         return f"Заказ № {self.ref_id}"
 
@@ -108,7 +120,7 @@ class BaseDish(Recipy):
         self.oven_future = None
         # у каждой ячейки выдачи есть 2 "лотка", нужно распределить в какой лоток помещает блюдо
         self.pickup_point_unit: int
-        self.is_dish_ready = asyncio.Event()
+        self.is_dish_ready = None
 
     def status_change(self, new_status):
         """Метод меняет статус блюда.
@@ -127,7 +139,6 @@ class BaseDish(Recipy):
             # обновление статуса в БД
         except PbmError.DataBaseError:
             print("Ошибка БД")
-
 
     def __repr__(self):
         return f"Блюдо {self.id} состоит из {self.dough}, {self.sauce}, {self.filling}, {self.additive}  " \
@@ -197,9 +208,9 @@ class BaseFilling(object):
         [tomato, {'program_id': 2, 'duration': 10}, ('d4', (3, 4))]"""
         # место хранения в холодьнике
         input_data = (
-                      ("d4", (3,4)), ("a4", (3,4)), ("t4", (3,4)),
-                      ("b4", (1,1)), ("a4", (1,1)), ("c4", (2,1))
-                      )
+            ("d4", (3, 4)), ("a4", (3, 4)), ("t4", (3, 4)),
+            ("b4", (1, 1)), ("a4", (1, 1)), ("c4", (2, 1))
+        )
 
         self.filling_content = [item + [value] for item, value in zip(self.filling_content, input_data)]
 
@@ -216,4 +227,3 @@ class BaseAdditive(BasePizzaPart):
 
     def __repr__(self):
         return f"Добавка {self.halfstuff_id}"
-

@@ -53,7 +53,7 @@ class BeforeCooking(object):
         pool = concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count())
         my_loop = asyncio.get_running_loop()
         async def task_1():
-            is_equipment_ok, equipment_data = await my_loop.run_in_executor(None, self.start_testing)
+            is_equipment_ok, equipment_data = await my_loop.run_in_executor(pool, self.start_testing)
             return is_equipment_ok, equipment_data
         async def task_2():
             recipes = await my_loop.run_in_executor(pool, self.parse_recipes)

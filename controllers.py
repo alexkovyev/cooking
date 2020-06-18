@@ -101,7 +101,7 @@ class Movement(object):
         n = random.randint(20, 40)
         print("-- Время работы контроллеров", n)
         await asyncio.sleep(n)
-        result = random.choice([True, False, True])
+        result = random.choice([True, True, True])
         print("-- Метод контроллеров завершен")
         return result
 

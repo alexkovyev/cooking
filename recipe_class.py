@@ -274,26 +274,26 @@ class Recipy(ConfigMixin):
         print("!!!!!!!! Ликвидируем блюдо", time.time())
         return "ОК"
 
-    # async def set_oven_timer(self):
-    #     print("!!!!!!!!!!ставим таймер на печь", time.time())
-    #     oven_future = asyncio.get_running_loop().create_future()
-    #     self.oven_future = oven_future
-    #     print("Это футура в заказе", self.oven_future)
-    #     await asyncio.create_task(self.oven_timer())
-    #
-    # async def oven_timer(self):
-    #     print("!!!!!!!!!!!!Начинаем ждать первый интервал", time.time())
-    #     print("Статус печи", self.oven_unit)
-    #     await asyncio.sleep(OVEN_LIQUIDATION_TIME)
-    #     print("!!!!!!!!!!! время сна завершено",time.time())
-    #     if not self.oven_future.cancelled():
-    #         print("!!!!!!!!!!!!!!Футура блюдо не забрали")
-    #         self.oven_future.set_result("time is over")
-    #         await self.dish_liquidation()
-    #
-    # async def time_changes_handler(self, time_futura):
-    #     """Обрабатывает результаты футуры об изменении времени выпечки"""
-    #     print(time_futura, time.time())
+    async def set_oven_timer(self):
+        print("!!!!!!!!!!ставим таймер на печь", time.time())
+        oven_future = asyncio.get_running_loop().create_future()
+        self.oven_future = oven_future
+        print("Это футура в заказе", self.oven_future)
+        await asyncio.create_task(self.oven_timer())
+
+    async def oven_timer(self):
+        print("!!!!!!!!!!!!Начинаем ждать первый интервал", time.time())
+        print("Статус печи", self.oven_unit)
+        await asyncio.sleep(OVEN_LIQUIDATION_TIME)
+        print("!!!!!!!!!!! время сна завершено",time.time())
+        if not self.oven_future.cancelled():
+            print("!!!!!!!!!!!!!!Футура блюдо не забрали")
+            self.oven_future.set_result("time is over")
+            await self.dish_liquidation()
+
+    async def time_changes_handler(self, time_futura):
+        """Обрабатывает результаты футуры об изменении времени выпечки"""
+        print(time_futura, time.time())
 
     # средняя укрупненность, так как операция с лимитом по времени от контроллеров
     async def bring_half_staff(self, cell_location_tuple, *args):
@@ -385,6 +385,8 @@ class Recipy(ConfigMixin):
             await args[0].immediately_executed_queue.put(self.controllers_bake)
         print("ЗАКОНЧИЛИ С БЛЮДОМ", time.time())
         print("СТАТУС блюда после доставки лопатки в печь", self.status)
+        print(self.is_dish_ready)
+        print(self.is_dish_ready.is_set())
 
     async def controllers_turn_heating_on(self):
         """Метод запускает прогрев печи"""
@@ -402,10 +404,11 @@ class Recipy(ConfigMixin):
         self.status = "baking"
         print("Это аргс", args)
         operation_result = await self.controllers_oven(oven_mode, recipe)
-        self.is_dish_ready = None
         if operation_result:
             self.is_dish_ready.set()
-            # self.status = "ready"
+            print("БЛЮДО ГОТОВО")
+            self.status = "ready"
+            print("Это результат установки", self.is_dish_ready.is_set())
             # self.oven_future = self.set_oven_timer()
             # print("СТАТУС БЛЮДА", self.status)
 
