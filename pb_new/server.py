@@ -8,9 +8,9 @@ from config import SERVER_HOST, SERVER_PORT
 from controllers.ControllerBus import ControllersEvents, event_generator
 from urls import setup_routes
 from views import hardware_broke_handler
+from kiosk_modes.CookingMode import CookingMode
 from kiosk_modes import (TestingMode,
-                          StandByMode,
-                          CookingMode)
+                          StandByMode)
 from discord_sender import DiscordBotSender
 from logs import PBlogs
 
@@ -33,7 +33,7 @@ class PizzaBotMain(object):
         scheduler = AsyncIOScheduler()
         scheduler.add_job(self.test_scheduler, 'interval', seconds=5)
         # переделать на включение в определенный момент
-        scheduler.add_job(self.turn_on_cooking_mode, 'interval', seconds=24)
+        scheduler.add_job(self.turn_on_cooking_mode, 'cron', day_of_week='*', hour='15', minute=4, second=0)
         return scheduler
 
     def get_config_data(self):

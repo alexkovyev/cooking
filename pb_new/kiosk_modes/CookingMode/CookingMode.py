@@ -1,31 +1,74 @@
-"""Этот модуль управляет заказами и блюдами"""
 import asyncio
+import concurrent.futures
+import multiprocessing
 import time
-import types
 
-from base_order import BaseOrder
-from equipment import Equipment
-from RA import RA
-from controllers import Controllers
+from pb_new.kiosk_modes.BaseMode import BaseMode
+from recipe_data import recipe_data
+from BaseOrder import BaseOrder
 
 
-class PizzaBotMain(object):
-    """Это основной класс блока.
-    Этот класс содержит информацию о том, какие блюда готовятся в текущий момент, содержит информацию о печах и
-    показываает время работы коиска. После завешения заказа, он удаляется из self.current_orders_proceed
-    """
+class BeforeCooking(object):
 
-    STOP_STATUS = "failed_to_be_cooked"
+    def __init__(self):
+        self.status = "getting_ready"
 
-    def __init__(self, equipment_data, recipes):
-        self.equipment = Equipment(equipment_data)
+    @classmethod
+    async def go_to_db_get_data(clx):
+        print("Подключаемся к БД за информацией", time.time())
+        equipment_data = ('супер важная информация об оборудовании', 'из БД')
+        await asyncio.sleep(10)
+        print("Получили данные из БД", time.time())
+        return equipment_data
+
+    @classmethod
+    def start_testing(clx):
+        """Тут вызываем методы контролеров по тестированию оборудования"""
+
+        # вызывается какой то супер метод контроллеров на проверку, возвращает status и dict с данными об оборудовании
+        is_equipment_ok = True
+        equipment_data = {"ovens": {i: {"oven_id": i, "status": "free"} for i in range(1, 22)},
+                          "cut_station": True,
+                          "package_station": True,
+                          "pick_up_points": {1: True,
+                                             2: True,
+                                             3: True}
+                          }
+        print("Начинаем тестировать оборудования", time.time())
+        time.sleep(40)
+        print("Оборудование протестировано, исправно", time.time())
+        return is_equipment_ok, equipment_data
+
+    @classmethod
+    def parse_recipes(clx):
+        """Парсит все рецепты в директории и возвращает словарь вида: описать"""
+        print("Начинаем парсить рецепты", time.time())
+        time.sleep(40)
+        print("Рецепты спарсены", time.time())
+        recipes = recipe_data
+        return recipes
+
+    @classmethod
+    async def start_pbm(self):
+        equipment_data = await self.go_to_db_get_data()
+        pool = concurrent.futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count())
+        my_loop = asyncio.get_running_loop()
+        async def task_1():
+            is_equipment_ok, equipment_data = await my_loop.run_in_executor(pool, self.start_testing)
+            return is_equipment_ok, equipment_data
+        async def task_2():
+            recipes = await my_loop.run_in_executor(pool, self.parse_recipes)
+            return recipes
+        task_1 = my_loop.create_task(task_1())
+        task_2 = my_loop.create_task(task_2())
+        await asyncio.gather(task_1, task_2)
+        self.current_instance = CookingMode()
+
+
+class CookingMode(BaseMode):
+    def __init__(self, recipes):
         self.recipes = recipes
-        # все заказы за текущий сеанс работы, {id: BaseOrder}
         self.current_orders_proceed = {}
-        # все неприготовленые блюда
-        self.current_dishes_proceed = {}
-        self.time_to_cook_all_dishes_left = 0
-        self.orders_requested_for_delivery = {}
         self.is_free = False
         # разные полезные очереди
         self.main_queue = asyncio.Queue()
@@ -33,8 +76,12 @@ class PizzaBotMain(object):
         self.maintain_queue = asyncio.Queue()
         self.immediately_executed_queue = asyncio.Queue()
 
-    def checking_order_for_double(self, new_order_id):
+    async def hello_from(self):
+        print("Привет от готовки", asyncio.sleep(10))
+
+    async def checking_order_for_double(self, new_order_id):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке
+        :param new_order_id: int
         :return bool"""
         is_new_order = True if new_order_id not in self.current_orders_proceed.keys() else False
         return is_new_order
@@ -77,7 +124,7 @@ class PizzaBotMain(object):
         })
         return new_order
 
-    def get_recipe_data(self, new_order):
+    async def get_recipe_data(self, new_order):
         """Этот метод добавляет в данные о блюде параметры чейнов рецепта для конкретного ингредиента
         :param словарь блюд из заказа
         {'40576654-9f31-11ea-bb37-0242ac130002':
@@ -133,7 +180,7 @@ class PizzaBotMain(object):
 
         # print("Входные данные", new_order)
 
-        def create_sauce_recipe(self, dish):
+        async def create_sauce_recipe(self, dish):
             """Этот метод выбирает рецепт для конкретного компонента соуса из общей базы рецептов"""
             sauce_id = dish["sauce"]["id"]
             dish["sauce"]["recipe"] = self.recipes["sauce"][sauce_id]
@@ -141,7 +188,7 @@ class PizzaBotMain(object):
                 dish["sauce"]["recipe"]["content"][component]["qt"] = my_tuple[1]
             # print("составили рецепт соуса", dish["sauce"])
 
-        def create_filling_recipe(self, dish):
+        async def create_filling_recipe(self, dish):
             """Этот метод выбирает рецепт начинки для начинки в общем и для каждого компонента начинки в целом"""
             filling_id = dish["filling"]["id"]
             dough_id = dish["dough"]["id"]
@@ -157,15 +204,9 @@ class PizzaBotMain(object):
 
         for dish in new_order.values():
             dish["dough"]["recipe"] = self.recipes["dough"]
-            create_sauce_recipe(self, dish)
-            create_filling_recipe(self, dish)
+            await create_sauce_recipe(self, dish)
+            await create_filling_recipe(self, dish)
             dish["additive"]["recipe"] = self.recipes["additive"]
-            # print("В блюдо добавили рецепт")
-
-    def fill_current_dishes_proceed(self, dish):
-        """ Добавляет блюда заказа в self.current_dishes_proceed
-        @:param order: экземпляр класса блюдо, созданный в self.create_new_order"""
-        self.current_dishes_proceed[dish.id] = dish
 
     async def create_new_order(self, new_order):
         """Этот метод создает экземпляр класса Order и заносит его в словарь self.current_orders_proceed
@@ -183,23 +224,13 @@ class PizzaBotMain(object):
                 # for dish in order.dishes:
                 #     self.main_queue.append((1, dish))
                 for dish in order.dishes:
-                    self.fill_current_dishes_proceed(dish)
                     await self.put_chains_in_queue(dish)
                 await order.create_monitoring()
                 asyncio.create_task(order.dish_readiness_monitoring())
 
-                # перемещаем заказы в словарь всех готовящихся блюд
-                # self.fill_current_dishes_proceed(order)
         # придумать ошибки какие могут быть
         except ValueError:
             pass
-
-    # def fill_current_dishes_proceed(self, order):
-    #     """ Добавляет блюда заказа в self.current_dishes_proceed
-    #     @:param order: экземпляр класса заказ, созданный в self.create_new_order"""
-    #
-    #     for dish in order.dishes:
-    #         self.current_dishes_proceed[dish.id] = dish
 
     async def put_chains_in_queue(self, dish):
         """Добавляет чейны рецепта в очередь готовки в виде кортежа (dish, chain)"""
@@ -217,46 +248,6 @@ class PizzaBotMain(object):
             self.is_free = True
         print("Можно ли танцевать? ", self.is_free)
         return self.is_free
-
-    async def wash_me(self, new_data):
-        print("Получен запрос на помылку оборудования", new_data, time.time())
-
-    async def controllers_alert_handler(self, cntrls_events):
-        """Эта курутина обрабатывает уведомления от контроллеров: отказ оборудования и qr код """
-        print("Переключились в контролеры", time.time())
-
-        async def wait_for_qr_code(cntrls_events):
-            """new_data - ckjdfhm {'ref_id': 65, 'pickup': 1}"""
-            event_name = "qr_scanned"
-            event = cntrls_events.get_dispatcher_event(event_name)
-            while True:
-                event_data = await event
-                _, qr_code_data = event_data
-                qr_code_data = qr_code_data["params"]
-                await self.qr_code_handler(qr_code_data)
-
-        async def wait_for_hardware_status_changed(cntrls_events):
-            """new_data - словарь {'unit_name': 'owen_cell_2', 'status': 'broken'} """
-            event_name = "hardware_status_changed"
-            event = cntrls_events.get_dispatcher_event(event_name)
-            while True:
-                event_data = await event
-                _, new_data = event_data
-                await self.equipment.oven_broke_handler(new_data)
-
-        async def wait_wash_requests(cntrls_events):
-            """Запрос на мойку """
-            event_name = "equipment_washing_request"
-            event = cntrls_events.get_dispatcher_event(event_name)
-            while True:
-                event_data = await event
-                _, new_data = event_data
-                await self.wash_me(new_data)
-
-        qr_event_waiter = asyncio.create_task(wait_for_qr_code(cntrls_events))
-        status_change_waiter = asyncio.create_task(wait_for_hardware_status_changed(cntrls_events))
-        washing_request = asyncio.create_task(wait_wash_requests(cntrls_events))
-        await asyncio.gather(qr_event_waiter, status_change_waiter, washing_request)
 
     async def cooking_immediately_execute(self):
         while True:
