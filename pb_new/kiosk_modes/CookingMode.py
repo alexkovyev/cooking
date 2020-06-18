@@ -14,7 +14,6 @@ class BeforeCooking(object):
 
     @classmethod
     async def go_to_db_get_data(clx):
-        # запрос к БД если нужно контроллерам для проверки работоспособности оборудования
         print("Подключаемся к БД за информацией", time.time())
         equipment_data = ('супер важная информация об оборудовании', 'из БД')
         await asyncio.sleep(10)
@@ -61,7 +60,7 @@ class BeforeCooking(object):
             return recipes
         task_1 = my_loop.create_task(task_1())
         task_2 = my_loop.create_task(task_2())
-        asyncio.gather(task_1, task_2)
+        await asyncio.gather(task_1, task_2)
         self.current_instance = CookingMode()
 
 
