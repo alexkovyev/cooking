@@ -185,8 +185,8 @@ class PizzaBotMain(object):
                 for dish in order.dishes:
                     self.fill_current_dishes_proceed(dish)
                     await self.put_chains_in_queue(dish)
-                await order.create_monitoring()
-                asyncio.create_task(order.dish_readiness_monitoring())
+                await order.create_is_order_ready_monitoring()
+                asyncio.create_task(order.order_readiness_monitoring())
 
                 # перемещаем заказы в словарь всех готовящихся блюд
                 # self.fill_current_dishes_proceed(order)

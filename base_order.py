@@ -6,16 +6,9 @@ import PbmError
 
 
 class BaseOrder(object):
-    """Этот класс представляет шаблон заказа, формируемого в среде окружения для каждого полученного заказа Статусы
-    заказа (записываются в БД) "received" - получен, то есть создан экземпляр класса Order, отсортирован "cooking" -
-    готовится, то есть RoboticArm уже начал с ним работу или он выпекается "ready" - выпечка завершена для обоих блюд
-    "informed" - объявлено уведомление о готовности заказа на TV (название в разработке) "packed" - упакован "wait to
-    delivery"- доставлен в пункт выдачи по запросу qr кода. "delivered" -  получено подтверждение о получении
-    клиентом (после анализа снимка ячейки) "closed" - завершен (поле в разработке, предполагаются какие то действия
-    по закрытию заказа, если нет, статус удалим) "failed_to_be_cooked" - не получилось приготовить "not_delivered" -
-    заказ не получен клиентом ORDER_STATUS описывается в БД кодом
+    """Этот класс представляет шаблон заказа, формируемого в среде окружения для каждого полученного заказа
     """
-    ORDER_STATUS = ["received", "cooking", "ready", "informed", "packed", "wait to delivery", "delivered", "closed",
+    ORDER_STATUS = ["received", "cooking", "ready", "packed", "wait to delivery", "delivered", "closed",
                     "failed_to_be_cooked", "not_delivered"]
 
     def __init__(self, new_order, ovens_reserved):
@@ -24,7 +17,7 @@ class BaseOrder(object):
         self.dishes = self.dish_creation(new_order["dishes"], ovens_reserved)
         self.status = "received"
         self.pickup_point = None
-        self.order_ready_monitoring = []
+        self.is_order_ready_monitoring = []
 
     def dish_creation(self, dishes, ovens_reserved):
         """Creates list of dishes objects in order"""
@@ -33,19 +26,19 @@ class BaseOrder(object):
                        for index, dish_id in enumerate(dishes)]
         return self.dishes
 
-    async def create_monitoring(self):
+    async def create_is_order_ready_monitoring(self):
         for dish in self.dishes:
             is_dish_ready = asyncio.Event()
             dish.is_dish_ready = is_dish_ready
-            self.order_ready_monitoring.append(is_dish_ready)
-        return self.order_ready_monitoring
+            self.is_order_ready_monitoring.append(is_dish_ready)
+        return self.is_order_ready_monitoring
 
-    async def dish_readiness_monitoring(self):
-        print("Запущен СТОРТОВЫЙ МОНИТОРИНГ")
-        while not all in self.order_ready_monitoring:
-            print("Блюда все еще готовятся")
+    async def order_readiness_monitoring(self):
+        while not all(list(map(lambda i: i.is_set(), self.is_order_ready_monitoring))):
             await asyncio.sleep(1)
         print("Сработало событие ЗАКАЗ ГОТОВ", time.time())
+        self.status = "ready"
+        # записать в БД статус
 
     # Алина код
     def change_status(self, new_status):

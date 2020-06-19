@@ -98,7 +98,7 @@ class Movement(object):
 
     @staticmethod
     async def movement(*args):
-        n = random.randint(20, 40)
+        n = random.randint(2, 10)
         print("-- Время работы контроллеров", n)
         await asyncio.sleep(n)
         result = random.choice([True, True, True])

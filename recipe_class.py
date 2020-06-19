@@ -16,6 +16,7 @@ class ConfigMixin(object):
     PRODUCT_CAPTURE_ID = "захват для продуктов"
     PACKING = "станция упаковки"
     GIVE_OUT = "пункт выдачи"
+    GARBAGE_STATION = "пункт утилизации"
 
 
 class Recipy(ConfigMixin):
@@ -270,10 +271,6 @@ class Recipy(ConfigMixin):
         }
         await self.atomic_chain_execute(atomic_params)
 
-    async def dish_liquidation(self, *args):
-        print("!!!!!!!! Ликвидируем блюдо", time.time())
-        return "ОК"
-
     async def set_oven_timer(self):
         print("!!!!!!!!!!ставим таймер на печь", time.time())
         oven_future = asyncio.get_running_loop().create_future()
@@ -289,7 +286,7 @@ class Recipy(ConfigMixin):
         if not self.oven_future.cancelled():
             print("!!!!!!!!!!!!!!Футура блюдо не забрали")
             self.oven_future.set_result("time is over")
-            await self.dish_liquidation()
+            await self.throwing_dish_away(self.oven_unit)
 
     async def time_changes_handler(self, time_futura):
         """Обрабатывает результаты футуры об изменении времени выпечки"""
@@ -336,7 +333,6 @@ class Recipy(ConfigMixin):
             await args[0].immediately_executed_queue.put(self.controllers_give_sauce)
             print("Добавили политие соусом в очередь")
         print("СТАТУС блюда после теста", self.status)
-
 
     async def get_filling_chain(self, storage_adress, cutting_program, *args):
         """Чейн по доставке и нарезки 1 п\ф"""
@@ -441,5 +437,13 @@ class Recipy(ConfigMixin):
         await self.chain_execute(chain_list)
         print("Закончили упаковку и выдачу пиццы")
 
-    async def throwing_dish_away(self):
+    async def throwing_dish_away(self, oven_unit):
         print("Запускаем выбрасывание блюда")
+        chain_list = [(self.change_gripper, "None"),
+                      (self.move_to_object, (oven_unit, None)),
+                      (self.get_vane_from_oven, None),
+                      (self.move_to_object, (self.GARBAGE_STATION, None)),
+                      (self.move_to_object, (oven_unit, None)),
+        ]
+        await self.chain_execute(chain_list)
+        print("Закончили выбрасывание блюда")

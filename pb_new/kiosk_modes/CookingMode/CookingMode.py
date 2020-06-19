@@ -67,9 +67,6 @@ class CookingMode(BaseMode):
         self.maintain_queue = asyncio.Queue()
         self.immediately_executed_queue = asyncio.Queue()
 
-    async def hello_from(self):
-        print("Привет от готовки", asyncio.sleep(10))
-
     async def checking_order_for_double(self, new_order_id):
         """Этот метод проверяет есть ли уже заказ с таким ref id в обработке
         :param new_order_id: int
