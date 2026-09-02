@@ -20,13 +20,13 @@ Draft for Cooking Module
 
 ## MCP: yandex-search
 
-This repo declares a project-scoped `yandex-search` MCP server in `.mcp.json` (Claude Code picks it up automatically). It shells out to the [`yandex-search-mcp`](https://www.npmjs.com/package/yandex-search-mcp) package via `npx` and needs Yandex Cloud credentials in your environment:
+В этом репозитории в файле `.mcp.json` объявлен MCP-сервер `yandex-search` на уровне проекта (Claude Code подхватывает его автоматически). Он запускает через `npx` пакет [`yandex-search-mcp`](https://www.npmjs.com/package/yandex-search-mcp), которому для работы нужны учётные данные Yandex Cloud в переменных окружения:
 
 ```bash
-export YANDEX_SEARCH_API_KEY=your_api_key
-export YANDEX_FOLDER_ID=your_folder_id
+export YANDEX_SEARCH_API_KEY=ваш_api_ключ
+export YANDEX_FOLDER_ID=ваш_folder_id
 ```
 
-Get these by creating a Yandex Cloud account, enabling the Search API, and creating a service account with the `search-api.executor` role plus an API key for it.
+Чтобы их получить: заведите аккаунт в Yandex Cloud, включите Search API, создайте сервисный аккаунт с ролью `search-api.executor` и выпустите для него API-ключ.
 
 
