@@ -18,4 +18,15 @@ Draft for Cooking Module
 при создании заказа в экземпляр BaseOrder.dishes добавляется экземпляры класса BaseDish 
 если кто-то дочитает до сюда, я еще напишу 
 
+## MCP: yandex-search
+
+This repo declares a project-scoped `yandex-search` MCP server in `.mcp.json` (Claude Code picks it up automatically). It shells out to the [`yandex-search-mcp`](https://www.npmjs.com/package/yandex-search-mcp) package via `npx` and needs Yandex Cloud credentials in your environment:
+
+```bash
+export YANDEX_SEARCH_API_KEY=your_api_key
+export YANDEX_FOLDER_ID=your_folder_id
+```
+
+Get these by creating a Yandex Cloud account, enabling the Search API, and creating a service account with the `search-api.executor` role plus an API key for it.
+
 
